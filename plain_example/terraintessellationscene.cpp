@@ -1,10 +1,13 @@
 #include "terraintessellationscene.h"
 #include "camera.h"
 
+#include <qdir.h>
+#include <QFile>
 #include <QImage>
 #include <QGLWidget>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions_4_2_Core>
+#include "LoaderObj.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -25,10 +28,14 @@ const GLchar* VertexShader =
 	"layout(location=1) in vec4 in_Color;\n"\
 	"out vec4 ex_Color;\n"\
 
+	"uniform mat4x4 mvp;\n"\
+
 	"void main(void)\n"\
 	"{\n"\
-	"	gl_Position = in_Position;\n"\
-	"	ex_Color = in_Color;\n"\
+	"	gl_Position = mvp * normalize(in_Position);\n"\
+	"	vec4 col = normalize(in_Position)*4.0;\n"\
+	"	//ex_Color = vec4(abs(col).x,0.0f,0.0f,1.0f);\n"\
+	"	ex_Color = vec4(abs(col.x), abs(col.y), abs(col.z), 1.0f);\n"\
 	"}\n"
 };
 
@@ -70,7 +77,7 @@ Vertex Vertices[] =
     { { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }
 };
 
-GLubyte Indices[] = {
+GLuint Indices[] = {
     // Top
     0, 1, 3,
     0, 3, 2,
@@ -134,8 +141,8 @@ TerrainTessellationScene::TerrainTessellationScene( QObject* parent )
     m_modelMatrix.setToIdentity();
 
     // Initialize the camera position and orientation
-    m_camera->setPosition( QVector3D( 250.0f, 10.0f, 250.0f ) );
-    m_camera->setViewCenter( QVector3D( 250.0f, 10.0f, 249.0f ) );
+    m_camera->setPosition( QVector3D( -0.3f, 0.1f, 1.0f ) );
+    m_camera->setViewCenter( QVector3D( 0.0f, 0.1f, 0.0f ) );
     m_camera->setUpVector( QVector3D( 0.0f, 1.0f, 0.0f ) );
 
     //m_displayModeNames << QStringLiteral( "shaderSimpleWireFrame" )
@@ -184,15 +191,15 @@ void TerrainTessellationScene::initialise()
     glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
 
     // Set the wireframe line properties
-    //QOpenGLShaderProgramPtr shader = m_material->shader();
-    //shader->bind();
-    //shader->setUniformValue( "line.width", 1.0f );
-    //shader->setUniformValue( "line.color", QVector4D( 0.0f, 1.0f, 0.0f, 1.0f ) );
+    QOpenGLShaderProgramPtr shader = m_material->shader();
+    shader->bind();
+    shader->setUniformValue( "line.width", 1.0f );
+    shader->setUniformValue( "line.color", QVector4D( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
-    //// Set the fog parameters
-    //shader->setUniformValue( "fog.color", QVector4D( 0.65f, 0.77f, 1.0f, 1.0f ) );
-    //shader->setUniformValue( "fog.minDistance", 50.0f );
-    //shader->setUniformValue( "fog.maxDistance", 128.0f );
+    // Set the fog parameters
+    shader->setUniformValue( "fog.color", QVector4D( 0.65f, 0.77f, 1.0f, 1.0f ) );
+    shader->setUniformValue( "fog.minDistance", 50.0f );
+    shader->setUniformValue( "fog.maxDistance", 128.0f );
 
     // Get subroutine indices
     //for ( int i = 0; i < DisplayModeCount; ++i)
@@ -207,6 +214,7 @@ void TerrainTessellationScene::initialise()
 void TerrainTessellationScene::update( float t )
 {
     m_modelMatrix.setToIdentity();
+	//m_modelMatrix.scale(10.f);
 
     // Store the time
     const float dt = t - m_time;
@@ -243,42 +251,43 @@ void TerrainTessellationScene::render()
     ////m_funcs->glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1,
     ////                                  &m_displayModeSubroutines[m_displayMode] );
 
-    //// Set the horizontal and vertical scales applied in the tess eval shader
-    //shader->setUniformValue( "horizontalScale", m_horizontalScale );
-    //shader->setUniformValue( "verticalScale", m_verticalScale );
-    //shader->setUniformValue( "pixelsPerTriangleEdge", m_screenSpaceError );
+    // Set the horizontal and vertical scales applied in the tess eval shader
+    shader->setUniformValue( "horizontalScale", m_horizontalScale );
+    shader->setUniformValue( "verticalScale", m_verticalScale );
+    shader->setUniformValue( "pixelsPerTriangleEdge", m_screenSpaceError );
 
-    //// Pass in the usual transformation matrices
-    //QMatrix4x4 viewMatrix = m_camera->viewMatrix();
-    //QMatrix4x4 modelViewMatrix = viewMatrix * m_modelMatrix;
-    //QMatrix3x3 worldNormalMatrix = m_modelMatrix.normalMatrix();
-    //QMatrix3x3 normalMatrix = modelViewMatrix.normalMatrix();
-    //QMatrix4x4 mvp = m_camera->projectionMatrix() * modelViewMatrix;
-    //shader->setUniformValue( "modelMatrix", m_modelMatrix );
-    //shader->setUniformValue( "modelViewMatrix", modelViewMatrix );
-    //shader->setUniformValue( "worldNormalMatrix", worldNormalMatrix );
-    //shader->setUniformValue( "normalMatrix", normalMatrix );
-    //shader->setUniformValue( "mvp", mvp );
+    // Pass in the usual transformation matrices
+    QMatrix4x4 viewMatrix = m_camera->viewMatrix();
+    QMatrix4x4 modelViewMatrix = viewMatrix * m_modelMatrix;
+    QMatrix3x3 worldNormalMatrix = m_modelMatrix.normalMatrix();
+    QMatrix3x3 normalMatrix = modelViewMatrix.normalMatrix();
+    QMatrix4x4 mvp = m_camera->projectionMatrix() * modelViewMatrix;
+    shader->setUniformValue( "modelMatrix", m_modelMatrix );
+    shader->setUniformValue( "modelViewMatrix", modelViewMatrix );
+    shader->setUniformValue( "worldNormalMatrix", worldNormalMatrix );
+    shader->setUniformValue( "normalMatrix", normalMatrix );
+    shader->setUniformValue( "mvp", mvp );
 
-    //// Set the lighting parameters
-    //QVector4D worldLightDirection( sinf( m_sunTheta * degToRad ), cosf( m_sunTheta * degToRad ), 0.0f, 0.0f );
-    //QMatrix4x4 worldToEyeNormal( normalMatrix );
-    //QVector4D lightDirection = worldToEyeNormal * worldLightDirection;
-    //shader->setUniformValue( "light.position", lightDirection );
-    //shader->setUniformValue( "light.intensity", QVector3D( 1.0f, 1.0f, 1.0f ) );
+    // Set the lighting parameters
+    QVector4D worldLightDirection( sinf( m_sunTheta * degToRad ), cosf( m_sunTheta * degToRad ), 0.0f, 0.0f );
+    QMatrix4x4 worldToEyeNormal( normalMatrix );
+    QVector4D lightDirection = worldToEyeNormal * worldLightDirection;
+    shader->setUniformValue( "light.position", lightDirection );
+    shader->setUniformValue( "light.intensity", QVector3D( 1.0f, 1.0f, 1.0f ) );
 
-    //// Set the material properties
-    //shader->setUniformValue( "material.Ka", QVector3D( 0.1f, 0.1f, 0.1f ) );
-    //shader->setUniformValue( "material.Kd", QVector3D( 1.0f, 1.0f, 1.0f ) );
-    //shader->setUniformValue( "material.Ks", QVector3D( 0.3f, 0.3f, 0.3f ) );
-    //shader->setUniformValue( "material.shininess", 10.0f );
+    // Set the material properties
+    shader->setUniformValue( "material.Ka", QVector3D( 0.1f, 0.1f, 0.1f ) );
+    shader->setUniformValue( "material.Kd", QVector3D( 1.0f, 1.0f, 1.0f ) );
+    shader->setUniformValue( "material.Ks", QVector3D( 0.3f, 0.3f, 0.3f ) );
+    shader->setUniformValue( "material.shininess", 10.0f );
 
     // Render the quad as a patch
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
         //shader->setPatchVertexCount( 1 );
 		//m_funcs->glDrawElements(GL_TRIANGLES, 8, GL_UNSIGNED_INT, (const GLvoid*)0);
-		m_funcs->glDrawElements(GL_TRIANGLES, 48, GL_UNSIGNED_BYTE, (GLvoid*)0);
+		// HACK
+		m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
 
 		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -293,7 +302,7 @@ void TerrainTessellationScene::resize( int w, int h )
 
     // Update the projection matrix
     float aspect = static_cast<float>( w ) / static_cast<float>( h );
-    m_camera->setPerspectiveProjection( 25.0f, aspect, 0.1f, 128.0f );
+    m_camera->setPerspectiveProjection( 55.0f, aspect, 0.2f, 2048.0f );
 
     // Update the viewport matrix
     float w2 = w / 2.0f;
@@ -304,12 +313,12 @@ void TerrainTessellationScene::resize( int w, int h )
     m_viewportMatrix.setColumn( 2, QVector4D( 0.0f, 0.0f, 1.0f, 0.0f ) );
     m_viewportMatrix.setColumn( 3, QVector4D( w2, h2, 0.0f, 1.0f ) );
 
-    //// We need the viewport size to calculate tessellation levels
-    //QOpenGLShaderProgramPtr shader = m_material->shader();
-    //shader->setUniformValue( "viewportSize", m_viewportSize );
+    // We need the viewport size to calculate tessellation levels
+    QOpenGLShaderProgramPtr shader = m_material->shader();
+    shader->setUniformValue( "viewportSize", m_viewportSize );
 
-    //// The geometry shader also needs the viewport matrix
-    //shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
+    // The geometry shader also needs the viewport matrix
+    shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
 }
 
 void TerrainTessellationScene::prepareShaders()
@@ -381,53 +390,26 @@ void TerrainTessellationScene::prepareTextures()
 
 void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
 {
-    // Generate patch primitive data to cover the heightmap texture
-
-    //// Each patch consists of a single point located at the lower-left corner
-    //// of a rectangle (in the xz-plane)
-    //const int maxTessellationLevel = 64;
-    //const int trianglesPerHeightSample = 10;
-    //const int xDivisions = trianglesPerHeightSample * heightMapSize.width() / maxTessellationLevel;
-    //const int zDivisions = trianglesPerHeightSample * heightMapSize.height() / maxTessellationLevel;
-    //m_patchCount = xDivisions * zDivisions;
-    //QVector<float> positionData( 2 * m_patchCount ); // 2 floats per vertex
-    //qDebug() << "Total number of patches =" << m_patchCount;
-
-    //const float dx = 1.0f / static_cast<float>( xDivisions );
-    //const float dz = 1.0f / static_cast<float>( zDivisions );
-
-    //for ( int j = 0; j < 2 * zDivisions; j += 2 ) {
-    //    float z = static_cast<float>( j ) * dz * 0.5;
-    //    for ( int i = 0; i < 2 * xDivisions; i += 2 ) {
-    //        float x = static_cast<float>( i ) * dx * 0.5;
-    //        const int index = xDivisions * j + i;
-    //        positionData[index]     = x;
-    //        positionData[index + 1] = z;
-    //    }
-    //}
-
+	//QFile file("shaders/truhe.obj");
+	QFile file("shaders/bunny.obj");
+	qCritical(QDir::currentPath().toLatin1().data());
+	LoaderObj loader = LoaderObj(file);
+	m_elementCount = loader.getIndexCount();
     m_vertexBuffer.create();
     m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_vertexBuffer.bind();
-    //m_vertexBuffer.allocate( octa_verts, 6 * 3 * sizeof( float ) );
-    m_vertexBuffer.allocate( Vertices, sizeof(Vertices) );
+	GLfloat *pVB = loader.getVB();
+	m_vertexBuffer.allocate( pVB, loader.getVertexCount()*loader.getFloatsPerVert()*sizeof(GLfloat) );
     m_vertexBuffer.release();
 	
     m_indexBuffer.create();
     m_indexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_indexBuffer.bind();
-    //m_indexBuffer.allocate( octa_indices, 8 * 3 * sizeof( int ) );
-	m_indexBuffer.allocate( Indices, sizeof(Indices) );
+	GLuint *pIB = loader.getIB();
+	m_indexBuffer.allocate( pIB, loader.getIndexCount()*sizeof(GLuint) );
     m_indexBuffer.release();
-}
 
-void TerrainTessellationScene::prepareVertexArrayObject()
-{
-	GLenum ErrorCheckValue = glGetError();
-	const size_t BufferSize = sizeof(Vertices);
-	const size_t VertexSize = sizeof(Vertices[0]);
-	const size_t RgbOffset = sizeof(Vertices[0].XYZW);
-    // Create a VAO for this "object"
+	int stride = loader.getFloatsPerVert()*sizeof(float);
     m_vao.create();
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
@@ -435,23 +417,54 @@ void TerrainTessellationScene::prepareVertexArrayObject()
         shader->bind();
         m_vertexBuffer.bind();
         //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
-		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 4, 8*sizeof(float));
-		shader->setAttributeBuffer("in_Color", GL_FLOAT, RgbOffset, 4, 8*sizeof(float));
+		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, stride);
+		shader->setAttributeBuffer("in_Color", GL_FLOAT, 0, 3, stride);
         shader->enableAttributeArray( "in_Position" );
         shader->enableAttributeArray( "in_Color" );
 		//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
 		//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
 		m_indexBuffer.bind();
     }
-	ErrorCheckValue = glGetError();
-	if (ErrorCheckValue != GL_NO_ERROR)
-	{
-		fprintf(
-			stderr,
-			"ERROR: Could not create a VBO: %o \n",
-			ErrorCheckValue
-		);
+}
 
-		exit(-1);
-	}
+//void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
+//{
+//
+//    m_vertexBuffer.create();
+//    m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+//    m_vertexBuffer.bind();
+//    //m_vertexBuffer.allocate( octa_verts, 6 * 3 * sizeof( float ) );
+//    m_vertexBuffer.allocate( Vertices, sizeof(Vertices) );
+//    m_vertexBuffer.release();
+//	
+//    m_indexBuffer.create();
+//    m_indexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+//    m_indexBuffer.bind();
+//    //m_indexBuffer.allocate( octa_indices, 8 * 3 * sizeof( int ) );
+//	m_indexBuffer.allocate( Indices, sizeof(Indices) );
+//    m_indexBuffer.release();
+//}
+
+void TerrainTessellationScene::prepareVertexArrayObject()
+{
+	//GLenum ErrorCheckValue = glGetError();
+	//const size_t BufferSize = sizeof(Vertices);
+	//const size_t VertexSize = sizeof(Vertices[0]);
+	//const size_t RgbOffset = sizeof(Vertices[0].XYZW);
+ //   // Create a VAO for this "object"
+ //   m_vao.create();
+ //   {
+ //       QOpenGLVertexArrayObject::Binder binder( &m_vao );
+ //       QOpenGLShaderProgramPtr shader = m_material->shader();
+ //       shader->bind();
+ //       m_vertexBuffer.bind();
+ //       //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
+	//	shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, 6*sizeof(float));
+	//	shader->setAttributeBuffer("in_Color", GL_FLOAT, RgbOffset, 3, 6*sizeof(float));
+ //       shader->enableAttributeArray( "in_Position" );
+ //       shader->enableAttributeArray( "in_Color" );
+	//	//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
+	//	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
+	//	m_indexBuffer.bind();
+ //   }
 }

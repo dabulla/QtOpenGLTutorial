@@ -78,7 +78,8 @@ private:
     bool m_viewCenterFixed;
     float m_panAngle;
     float m_tiltAngle;
-
+	
+    unsigned int  m_elementCount;
 
     QMatrix4x4 m_viewportMatrix;
     QVector2D m_viewportSize;

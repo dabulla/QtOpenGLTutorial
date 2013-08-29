@@ -43,7 +43,7 @@ uniform vec4 color3 = vec4( 0.75, 0.00, 0.00, 1.00 );
 uniform vec4 color4 = vec4( 1.00, 1.00, 1.00, 1.00 );
 
 in wireFrameVertex {
-    //noperspective vec3 edgeDistance;
+    noperspective vec3 edgeDistance;
     vec4 worldPosition;
     //vec3 worldNormal;
     //vec4 position;
