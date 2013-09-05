@@ -144,6 +144,15 @@
     <None Include="shaders\truhe.mtl">
       <Filter>Resource Dateien</Filter>
     </None>
+    <None Include="shaders\object - Kopie.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="shaders\phong.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="shaders\phong.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="shaders\truhe_color.png">

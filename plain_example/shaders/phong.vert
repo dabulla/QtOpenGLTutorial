@@ -1,21 +1,16 @@
-#version 330
+#version 400
 #pragma debug(on)
 
-layout(location = 0) in vec3 VertexPosition;
-layout(location = 1) in vec3 VertexNormal;
-
-layout(location = 2) in vec2 TexCoord0;
-layout(location = 3) in vec2 TexCoord1;
-
+layout (location = 0) in vec4 vertexPosition;
 
 out VertexData {
-	vec2 TextureUV0;
-	vec2 TextureUV1;
-	vec3 Normal;
-	vec4 Position;
-} oput;
+    vec4 Position;
+} Out;
 
-uniform vec3 lightSource;
+void main()
+{
+    Out.position = vertexPosition;
+}
 
 uniform	mat4x4 NormalMatrix;
 uniform	mat4x4 WorldMatrix;

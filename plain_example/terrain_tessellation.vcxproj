@@ -411,9 +411,12 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <None Include="shaders\object - Kopie.geom" />
+    <None Include="shaders\phong.vert" />
     <None Include="shaders\object.frag" />
     <None Include="shaders\object.geom" />
     <None Include="shaders\object.vert" />
+    <None Include="shaders\phong.frag" />
     <None Include="shaders\terraintessellation.frag">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
