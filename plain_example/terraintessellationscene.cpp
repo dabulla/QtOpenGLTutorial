@@ -1,4 +1,4 @@
-#include "terraintessellationscene.h"
+﻿#include "terraintessellationscene.h"
 #include "camera.h"
 
 #include <qdir.h>
@@ -6,7 +6,7 @@
 #include <QImage>
 #include <QGLWidget>
 #include <QOpenGLContext>
-#include <QOpenGLFunctions_4_2_Core>
+#include <QOpenGLFunctions_4_3_Core>
 #include "LoaderObj.h"
 
 #define _USE_MATH_DEFINES
@@ -19,38 +19,6 @@ typedef struct
 	float XYZW[4];
 	float RGBA[4];
 } Vertex;
-
-const GLchar* VertexShader =
-{
-	"#version 400\n"\
-
-	"layout(location=0) in vec4 in_Position;\n"\
-	"layout(location=1) in vec4 in_Color;\n"\
-	"out vec4 ex_Color;\n"\
-
-	"uniform mat4x4 mvp;\n"\
-
-	"void main(void)\n"\
-	"{\n"\
-	"	gl_Position = mvp * normalize(in_Position);\n"\
-	"	vec4 col = normalize(in_Position)*4.0;\n"\
-	"	//ex_Color = vec4(abs(col).x,0.0f,0.0f,1.0f);\n"\
-	"	ex_Color = vec4(abs(col.x), abs(col.y), abs(col.z), 1.0f);\n"\
-	"}\n"
-};
-
-const GLchar* FragmentShader =
-{
-	"#version 400\n"\
-
-	"in vec4 ex_Color;\n"\
-	"out vec4 out_Color;\n"\
-
-	"void main(void)\n"\
-	"{\n"\
-	"	out_Color = ex_Color;\n"\
-	"}\n"
-};
 
 Vertex Vertices[] =
 {
@@ -138,8 +106,6 @@ TerrainTessellationScene::TerrainTessellationScene( QObject* parent )
       m_displayModeSubroutines( DisplayModeCount ),
       m_funcs( 0 )
 {
-    m_modelMatrix.setToIdentity();
-
     // Initialize the camera position and orientation
     m_camera->setPosition( QVector3D( -0.3f, 0.1f, 1.0f ) );
     m_camera->setViewCenter( QVector3D( 0.0f, 0.1f, 0.0f ) );
@@ -170,7 +136,7 @@ void TerrainTessellationScene::initialise()
         m_logger.enableMessages();
     }
 
-    m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_2_Core>();
+    m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_3_Core>();
     if ( !m_funcs )
     {
         qFatal("Requires OpenGL >= 4.0");
@@ -214,7 +180,7 @@ void TerrainTessellationScene::initialise()
 void TerrainTessellationScene::update( float t )
 {
     m_modelMatrix.setToIdentity();
-	//m_modelMatrix.scale(10.f);
+	m_modelMatrix.scale(10.f);
 
     // Store the time
     const float dt = t - m_time;
@@ -262,11 +228,11 @@ void TerrainTessellationScene::render()
     QMatrix3x3 worldNormalMatrix = m_modelMatrix.normalMatrix();
     QMatrix3x3 normalMatrix = modelViewMatrix.normalMatrix();
     QMatrix4x4 mvp = m_camera->projectionMatrix() * modelViewMatrix;
-    shader->setUniformValue( "modelMatrix", m_modelMatrix );
-    shader->setUniformValue( "modelViewMatrix", modelViewMatrix );
-    shader->setUniformValue( "worldNormalMatrix", worldNormalMatrix );
-    shader->setUniformValue( "normalMatrix", normalMatrix );
-    shader->setUniformValue( "mvp", mvp );
+    shader->setUniformValue( "WorldMatrix", m_modelMatrix );
+    shader->setUniformValue( "ModelViewMatrix", modelViewMatrix );
+    shader->setUniformValue( "WorldNormalMatrix", worldNormalMatrix );
+    shader->setUniformValue( "NormalMatrix", normalMatrix );
+    shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
 
     // Set the lighting parameters
     QVector4D worldLightDirection( sinf( m_sunTheta * degToRad ), cosf( m_sunTheta * degToRad ), 0.0f, 0.0f );
@@ -329,7 +295,10 @@ void TerrainTessellationScene::prepareShaders()
     //                        //":/shaders/terraintessellation.tes",
     //                        //":/shaders/terraintessellation.geom",
     //                        ":/shaders/terraintessellation.frag" );
-	m_material->setShadersFromString( VertexShader, FragmentShader);
+	//m_material->setShadersFromString( VertexShader, FragmentShader);
+	//m_material->setShaders( "shaders/inline.vert", "shaders/inline.frag");
+	//m_material->setShaders( "shaders/phong.vert", "shaders/phong.frag");
+	m_material->setShaders( "shaders/phong.vert", "shaders/phongcomputenormalsflat.geom", "shaders/phong.frag");
 }
 
 void TerrainTessellationScene::prepareTextures()
@@ -395,11 +364,20 @@ void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
 	qCritical(QDir::currentPath().toLatin1().data());
 	LoaderObj loader = LoaderObj(file);
 	m_elementCount = loader.getIndexCount();
+	m_vertexCount = loader.getVertexCount();
+	
+	//Buffer filled by compute shader
+    m_normalsBuffer.create();
+    m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_normalsBuffer.bind();
+	m_normalsBuffer.allocate(loader.getVertexCount()*3*sizeof(GLfloat) );
+    m_normalsBuffer.release();
+
     m_vertexBuffer.create();
     m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_vertexBuffer.bind();
 	GLfloat *pVB = loader.getVB();
-	m_vertexBuffer.allocate( pVB, loader.getVertexCount()*loader.getFloatsPerVert()*sizeof(GLfloat) );
+	m_vertexBuffer.allocate( pVB, m_vertexCount*loader.getFloatsPerVert()*sizeof(GLfloat) );
     m_vertexBuffer.release();
 	
     m_indexBuffer.create();
@@ -408,6 +386,8 @@ void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
 	GLuint *pIB = loader.getIB();
 	m_indexBuffer.allocate( pIB, loader.getIndexCount()*sizeof(GLuint) );
     m_indexBuffer.release();
+
+	//genNormalsGPU();
 
 	int stride = loader.getFloatsPerVert()*sizeof(float);
     m_vao.create();
@@ -467,4 +447,53 @@ void TerrainTessellationScene::prepareVertexArrayObject()
 	//	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
 	//	m_indexBuffer.bind();
  //   }
+}
+
+
+void TerrainTessellationScene::genNormalsGPU() {
+	// Creating the compute shader, and the program object containing the shader
+    GLuint progHandle = m_funcs->glCreateProgram();
+    GLuint cs = m_funcs->glCreateShader(GL_COMPUTE_SHADER);
+	
+    QFile file("shaders/genNormals.comp");
+    file.open(QIODevice::ReadOnly);
+    QString s;
+
+    s.append(file.readAll());
+	const GLchar *const ptr = s.toLatin1().data();
+    m_funcs->glShaderSource(cs, 2, &ptr, NULL);
+	m_funcs->glCompileShader(cs);
+    int rvalue;
+    m_funcs->glGetShaderiv(cs, GL_COMPILE_STATUS, &rvalue);
+    if (!rvalue) {
+        fprintf(stderr, "Error in compiling the compute shader\n");
+        GLchar log[10240];
+        GLsizei length;
+        m_funcs->glGetShaderInfoLog(cs, 10239, &length, log);
+        fprintf(stderr, "Compiler log:\n%s\n", log);
+        exit(40);
+    }
+    m_funcs->glAttachShader(progHandle, cs);
+
+    m_funcs->glLinkProgram(progHandle);
+    m_funcs->glGetProgramiv(progHandle, GL_LINK_STATUS, &rvalue);
+    if (!rvalue) {
+        fprintf(stderr, "Error in linking compute shader program\n");
+        GLchar log[10240];
+        GLsizei length;
+        m_funcs->glGetProgramInfoLog(progHandle, 10239, &length, log);
+        fprintf(stderr, "Linker log:\n%s\n", log);
+        exit(41);
+    }   
+	m_funcs->glUseProgram(progHandle);
+    
+	//m_funcs->glUniform1i(m_funcs->glGetUniformLocation(progHandle, "normalsBuff"), m_normalsBuffer.bufferId);
+
+	GLuint normalsBufferId = m_funcs->glGetProgramResourceIndex(progHandle, GL_SHADER_STORAGE_BLOCK, "normalsBuffer");
+	m_funcs->glShaderStorageBlockBinding(progHandle, m_normalsBuffer.bufferId(), normalsBufferId);
+
+	m_funcs->glUseProgram(progHandle);
+	m_funcs->glUniform1f(m_funcs->glGetUniformLocation(progHandle, "maxFaces"), 0);
+	m_funcs->glDispatchCompute(m_vertexCount, m_elementCount, 1);
+	m_funcs->glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }

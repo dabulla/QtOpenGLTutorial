@@ -1,0 +1,16 @@
+#version 430
+
+buffer normalsBuffer
+{
+	float3 n[];
+};
+
+//layout (local_size_x = 16, local_size_y = 16) in;
+void main() {
+	int storePos = ivec2(gl_GlobalInvocationID.x);
+	//gl_WorkGroupID.x
+	imageStore(destTex, storePos, vec4(1.0-globalCoef*localCoef, 0.0, 0.0, 0.0));
+	n[storePos].x=0.f;
+	n[storePos].y=2.f;
+	n[storePos].z=3.f;
+}

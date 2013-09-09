@@ -11,6 +11,8 @@
 #include <QMatrix4x4>
 #include <QStringList>
 
+#include <QOpenGLFunctions_4_3_Core>
+
 class Camera;
 
 class QOpenGLFunctions_4_2_Core;
@@ -72,6 +74,8 @@ private:
     void prepareVertexBuffers( QSize heightMapSize );
     void prepareVertexArrayObject();
 
+	void genNormalsGPU();
+
 	QOpenGLDebugLogger m_logger;
     Camera* m_camera;
     QVector3D m_v;
@@ -88,6 +92,10 @@ private:
     QOpenGLVertexArrayObject m_vao;
 	QOpenGLBuffer m_vertexBuffer;
 	QOpenGLBuffer m_indexBuffer;
+
+	QOpenGLBuffer m_normalsBuffer;
+
+	int m_vertexCount;
     //QOpenGLBuffer m_patchBuffer;
     int m_patchCount;
     float m_screenSpaceError;
@@ -108,7 +116,7 @@ private:
     QStringList m_displayModeNames;
     QVector<GLuint> m_displayModeSubroutines;
 
-    QOpenGLFunctions_4_2_Core* m_funcs;
+    QOpenGLFunctions_4_3_Core* m_funcs;
     QSize m_heightMapSize;
 private slots:
 	void onMessageLogged( QOpenGLDebugMessage message );

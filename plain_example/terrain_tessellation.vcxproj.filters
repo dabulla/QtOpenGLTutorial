@@ -153,6 +153,18 @@
     <None Include="shaders\phong.vert">
       <Filter>Resource Dateien</Filter>
     </None>
+    <None Include="shaders\inline.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="shaders\inline.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="shaders\phongcomputenormals.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="shaders\genNormals.comp">
+      <Filter>Resource Dateien</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="shaders\truhe_color.png">

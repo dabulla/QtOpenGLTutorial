@@ -411,7 +411,11 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <None Include="shaders\genNormals.comp" />
+    <None Include="shaders\inline.frag" />
+    <None Include="shaders\inline.vert" />
     <None Include="shaders\object - Kopie.geom" />
+    <None Include="shaders\phongcomputenormals.geom" />
     <None Include="shaders\phong.vert" />
     <None Include="shaders\object.frag" />
     <None Include="shaders\object.geom" />
