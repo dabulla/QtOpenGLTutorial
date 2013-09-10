@@ -151,7 +151,7 @@ void TerrainTessellationScene::initialise()
     prepareVertexArrayObject();
 
     // Enable depth testing
-    glEnable( GL_DEPTH_TEST );
+    //glEnable( GL_DEPTH_TEST );
     //glEnable( GL_CULL_FACE );
 
     glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
@@ -211,7 +211,6 @@ void TerrainTessellationScene::render()
 
     //m_material->bind();
     QOpenGLShaderProgramPtr shader = m_material->shader();
-    shader->bind();
 
     //// Set the fragment shader display mode subroutine
     ////m_funcs->glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1,
@@ -247,7 +246,7 @@ void TerrainTessellationScene::render()
     shader->setUniformValue( "material.Ks", QVector3D( 0.3f, 0.3f, 0.3f ) );
     shader->setUniformValue( "material.shininess", 10.0f );
 
-    // Render the quad as a patch
+    shader->bind();
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
         //shader->setPatchVertexCount( 1 );
@@ -257,6 +256,7 @@ void TerrainTessellationScene::render()
 
 		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+	shader->release();
 }
 
 void TerrainTessellationScene::resize( int w, int h )

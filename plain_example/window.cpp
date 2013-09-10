@@ -7,13 +7,16 @@
 #include <QOpenGLContext>
 #include <QTimer>
 
-Window::Window( QScreen* screen )
-    : QWindow( screen ),
+Window::Window( QWindow* window )
+    : QQuickView( window ),
       m_scene( new TerrainTessellationScene( this ) ),
       m_leftButtonPressed( false )
 {
+	setClearBeforeRendering(false);
+    //show();
     // Tell Qt we will use OpenGL for this window
     setSurfaceType( OpenGLSurface );
+	setPersistentOpenGLContext(true);
 
     // Specify the format we wish to use
     QSurfaceFormat format;
@@ -25,28 +28,26 @@ Window::Window( QScreen* screen )
     format.setOption( QSurfaceFormat::DebugContext );
 
     resize( 1366, 768 );
-    setFormat( format );
-    create();
+    //setFormat( format );
+    //create();
 
     // Create an OpenGL context
-    m_context = new QOpenGLContext;
-    m_context->setFormat( format );
-    m_context->create();
+    //m_context->setFormat( format );
+    //m_context->create();
 
     // Setup our scene
-    m_context->makeCurrent( this );
-    m_scene->setContext( m_context );
-    initializeGL();
+    //m_context->makeCurrent( this );
+
+    //initializeGL();
+	//m_context->doneCurrent();
 
     // Make sure we tell OpenGL about new window sizes
-    connect( this, SIGNAL( widthChanged( int ) ), this, SLOT( resizeGL() ) );
-    connect( this, SIGNAL( heightChanged( int ) ), this, SLOT( resizeGL() ) );
-    resizeGL();
 
     // This timer drives the scene updates
-    QTimer* timer = new QTimer( this );
-    connect( timer, SIGNAL( timeout() ), this, SLOT( updateScene() ) );
-    timer->start( 16 );
+    //QTimer* timer = new QTimer( this );
+	connect( this, SIGNAL( beforeRendering() ), this, SLOT( updateScene() ), Qt::DirectConnection );
+    //timer->start( 16 );
+	//connect(this, SIGNAL(sceneGraphInitialized()), this, SLOT(onSceneGraphInitialized()), Qt::DirectConnection );
 }
 
 void Window::initializeGL()
@@ -54,6 +55,7 @@ void Window::initializeGL()
     m_context->makeCurrent( this );
     m_scene->initialise();
     m_time.start();
+	m_context->doneCurrent();
 }
 
 void Window::paintGL()
@@ -66,19 +68,44 @@ void Window::paintGL()
 
     // Swap front/back buffers
     m_context->swapBuffers( this );
+	m_context->doneCurrent();
 }
 
 void Window::resizeGL()
 {
     m_context->makeCurrent( this );
     m_scene->resize( width(), height() );
+	m_context->doneCurrent();
 }
 
 void Window::updateScene()
 {
+	static bool firstTime = true;
+	if(firstTime)
+	{
+		m_context = openglContext();//new QOpenGLContext;
+		m_scene->setContext(m_context);
+		initializeGL();
+		resizeGL();
+		
+		connect( this, SIGNAL( widthChanged( int ) ), this, SLOT( resizeGL() ) );
+		connect( this, SIGNAL( heightChanged( int ) ), this, SLOT( resizeGL() ) );
+		firstTime = false;
+	}
     float time = m_time.elapsed() / 1000.0f;
     m_scene->update( time );
     paintGL();
+}
+
+void Window::onSceneGraphInitialized()
+{
+	//openglContext()->blockSignals(true);
+	//openglContext()->doneCurrent();
+	//openglContext()->setShareContext(m_context);
+	//openglContext()->setFormat(requestedFormat());
+	//openglContext()->create();
+	//openglContext()->makeCurrent(this);
+	//openglContext()->blockSignals(false);
 }
 
 void Window::keyPressEvent( QKeyEvent* e )
@@ -184,7 +211,7 @@ void Window::keyPressEvent( QKeyEvent* e )
             break;
 
         default:
-            QWindow::keyPressEvent( e );
+            QQuickView::keyPressEvent( e );
     }
 }
 
@@ -213,7 +240,7 @@ void Window::keyReleaseEvent( QKeyEvent* e )
             break;
 
         default:
-            QWindow::keyReleaseEvent( e );
+            QQuickView::keyReleaseEvent( e );
     }
 }
 
@@ -224,14 +251,14 @@ void Window::mousePressEvent( QMouseEvent* e )
         m_leftButtonPressed = true;
         m_pos = m_prevPos = e->pos();
     }
-    QWindow::mousePressEvent( e );
+	QQuickView::mousePressEvent( e );
 }
 
 void Window::mouseReleaseEvent( QMouseEvent* e )
 {
     if ( e->button() == Qt::LeftButton )
         m_leftButtonPressed = false;
-    QWindow::mouseReleaseEvent( e );
+    QQuickView::mouseReleaseEvent( e );
 }
 
 void Window::mouseMoveEvent( QMouseEvent* e )
@@ -248,6 +275,6 @@ void Window::mouseMoveEvent( QMouseEvent* e )
         scene->tilt( dy );
     }
 
-    QWindow::mouseMoveEvent( e );
+    QQuickView::mouseMoveEvent( e );
 
 }

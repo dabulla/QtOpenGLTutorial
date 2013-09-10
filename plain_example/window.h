@@ -1,19 +1,19 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <QWindow>
+#include <qquickview.h>
 #include <QTime>
 
 class AbstractScene;
 
 class QOpenGLContext;
 
-class Window : public QWindow
+class Window : public QQuickView
 {
     Q_OBJECT
 
 public:
-    Window( QScreen* screen = 0 );
+    Window( QWindow* window = 0 );
 
 private:
     void initializeGL();
@@ -29,7 +29,9 @@ protected:
     void mousePressEvent( QMouseEvent* e );
     void mouseReleaseEvent( QMouseEvent* e );
     void mouseMoveEvent( QMouseEvent* e );
-
+	
+protected slots :
+    void onSceneGraphInitialized();
 private:
     QOpenGLContext* m_context;
     AbstractScene* m_scene;
