@@ -8,7 +8,9 @@ class AbstractScene;
 
 class QOpenGLContext;
 
-class Window : public QQuickView
+#define WINDOW_BASE QWindow
+
+class Window : public WINDOW_BASE
 {
     Q_OBJECT
 
@@ -29,9 +31,11 @@ protected:
     void mousePressEvent( QMouseEvent* e );
     void mouseReleaseEvent( QMouseEvent* e );
     void mouseMoveEvent( QMouseEvent* e );
+	QSurfaceFormat getFormat();
 	
 protected slots :
     void onSceneGraphInitialized();
+
 private:
     QOpenGLContext* m_context;
     AbstractScene* m_scene;

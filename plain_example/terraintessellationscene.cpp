@@ -151,7 +151,7 @@ void TerrainTessellationScene::initialise()
     prepareVertexArrayObject();
 
     // Enable depth testing
-    //glEnable( GL_DEPTH_TEST );
+    glEnable( GL_DEPTH_TEST );
     //glEnable( GL_CULL_FACE );
 
     glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
@@ -256,7 +256,7 @@ void TerrainTessellationScene::render()
 
 		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
-	shader->release();
+	//shader->release();
 }
 
 void TerrainTessellationScene::resize( int w, int h )
@@ -296,9 +296,9 @@ void TerrainTessellationScene::prepareShaders()
     //                        //":/shaders/terraintessellation.geom",
     //                        ":/shaders/terraintessellation.frag" );
 	//m_material->setShadersFromString( VertexShader, FragmentShader);
-	//m_material->setShaders( "shaders/inline.vert", "shaders/inline.frag");
+	m_material->setShaders( "shaders/inline.vert", "shaders/inline.frag");
 	//m_material->setShaders( "shaders/phong.vert", "shaders/phong.frag");
-	m_material->setShaders( "shaders/phong.vert", "shaders/phongcomputenormalsflat.geom", "shaders/phong.frag");
+	//m_material->setShaders( "shaders/phong.vert", "shaders/phongcomputenormalsflat.geom", "shaders/phong.frag");
 }
 
 void TerrainTessellationScene::prepareTextures()
