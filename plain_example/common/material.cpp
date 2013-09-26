@@ -17,7 +17,8 @@ Material::Material()
 
 Material::~Material()
 {
-    m_shader->release();
+	//m_shader->is
+    //m_shader->release();
 }
 
 void Material::bind()

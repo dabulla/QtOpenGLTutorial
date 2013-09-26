@@ -8,7 +8,8 @@ class AbstractScene;
 
 class QOpenGLContext;
 
-#define WINDOW_BASE QWindow
+//#define WINDOW_BASE QWindow
+#define WINDOW_BASE QQuickView
 
 class Window : public WINDOW_BASE
 {
@@ -17,13 +18,14 @@ class Window : public WINDOW_BASE
 public:
     Window( QWindow* window = 0 );
 
+	QUrl m_sourcePath;
+	void loadUi();
 private:
     void initializeGL();
 
 protected slots:
     void resizeGL();
-    void paintGL();
-    void updateScene();
+    void updateAndRenderScene();
 
 protected:
     void keyPressEvent( QKeyEvent* e );
@@ -33,6 +35,7 @@ protected:
     void mouseMoveEvent( QMouseEvent* e );
 	QSurfaceFormat getFormat();
 	
+	void closing(QQuickCloseEvent *close);
 protected slots :
     void onSceneGraphInitialized();
 
