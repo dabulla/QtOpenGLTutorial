@@ -32,29 +32,27 @@ uniform mat4x4 ModelViewProjectionMatrix;
 
 void phongModel( out vec3 ambientAndDiff, out vec3 spec )
 {
-	vec3 lightPos = vec3(ModelViewMatrix*light.position);
-    // Some useful vectors
-    vec3 s = normalize( light.position.xyz - input.worldPosition.xyz );
-    vec3 v = normalize( -input.position.xyz );
-    vec3 n = normalize( input.normal );
-    vec3 r = reflect( -s, n );
+    vec3 lightDir = normalize( light.position.xyz + input.position.xyz );
+    vec3 viewDir = normalize( input.position.xyz );
+    vec3 normal = normalize( input.normal );
+    vec3 reflectDir  = reflect( -lightDir, normal );
 
     // Calculate the ambient contribution
     vec3 ambient = light.intensity * material.Ka;
 
     // Calculate the diffuse contribution
-    float sDotN = max( dot( s, n ), 0.0 );
-    vec3 diffuse = light.intensity * material.Kd * sDotN;
+    float lambertian = max( dot( lightDir, normal ), 0.0 );
+    vec3 diffuse = light.intensity * material.Kd * lambertian;
 
     // Sum the ambient and diffuse contributions
     ambientAndDiff = ambient + diffuse;
 
     // Calculate the specular highlight component
     spec = vec3( 0.0 );
-    if ( sDotN > 0.0 )
+    if ( lambertian > 0.0 )
     {
         spec = light.intensity * material.Ks *
-               pow( max( dot( r, v ), 0.0 ), material.shininess );
+               pow( max( dot( reflectDir , viewDir ), 0.0 ), material.shininess );
     }
 }
 

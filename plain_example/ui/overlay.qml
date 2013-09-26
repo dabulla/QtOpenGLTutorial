@@ -22,6 +22,7 @@ Rectangle {
 			title: "controls"
 			ColumnLayout {
 				Button {
+					anchors.horizontalCenter: parent.horizontalCenter
 					text: "Compile Shader"
 					onClicked: {
 						console.log("recompiling shader");
@@ -29,7 +30,7 @@ Rectangle {
 					}
 				}
 				Label {
-					text: "Ka"
+					text: "Ka: " + materialKaSlider.value
 				}
 				Slider {
 					id: materialKaSlider
@@ -37,10 +38,10 @@ Rectangle {
 					value: 0.1
 					maximumValue: 1
 					minimumValue: 0
-					stepSize: 0.01
+					stepSize: 0.1
 				}
 				Label {
-					text: "Kd"
+					text: "Kd: " + materialKdSlider.value
 				}
 				Slider {
 					id: materialKdSlider
@@ -48,10 +49,10 @@ Rectangle {
 					value: 1.0
 					maximumValue: 1
 					minimumValue: 0
-					stepSize: 0.01
+					stepSize: 0.1
 				}
 				Label {
-					text: "Ks"
+					text: "Ks: " + materialKsSlider.value
 				}
 				Slider {
 					id: materialKsSlider
@@ -59,10 +60,10 @@ Rectangle {
 					value: 0.3
 					maximumValue: 1
 					minimumValue: 0
-					stepSize: 0.01
+					stepSize: 0.1
 				}
 				Label {
-					text: "Shininess"
+					text: "Shininess: " + materialShininessSlider.value
 				}
 				Slider {
 					id: materialShininessSlider
@@ -73,7 +74,7 @@ Rectangle {
 					stepSize: 0.1
 				}
 				Label {
-					text: "Light"
+					text: "Light: " + lightSlider.value + "°"
 				}
 				Slider {
 					id: lightSlider
