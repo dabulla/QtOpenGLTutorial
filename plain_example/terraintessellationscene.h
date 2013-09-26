@@ -11,9 +11,12 @@
 #include <QMatrix4x4>
 #include <QStringList>
 
-#include <QOpenGLFunctions_4_3_Core>
+#include <QOpenGLFunctions_4_2_Core>
+
+#define DEBUG_OPENGL_ENABLED 0
 
 class Camera;
+class QQuickItem;
 
 class QOpenGLFunctions_4_2_Core;
 
@@ -29,6 +32,7 @@ public:
     virtual void render();
     virtual void resize( int w, int h );
 
+	void setRootObject(QQuickItem* ctx);
     // Camera motion control
     void setSideSpeed( float vx ) { m_v.setX( vx ); }
     void setVerticalSpeed( float vy ) { m_v.setY( vy ); }
@@ -82,6 +86,8 @@ private:
     bool m_viewCenterFixed;
     float m_panAngle;
     float m_tiltAngle;
+
+	QQuickItem* m_rootObject;;
 	
     unsigned int  m_elementCount;
 
@@ -116,7 +122,7 @@ private:
     QStringList m_displayModeNames;
     QVector<GLuint> m_displayModeSubroutines;
 
-    QOpenGLFunctions_4_3_Core* m_funcs;
+    QOpenGLFunctions_4_2_Core* m_funcs;
     QSize m_heightMapSize;
 private slots:
 	void onMessageLogged( QOpenGLDebugMessage message );

@@ -2,7 +2,7 @@
 #pragma debug(on)
 
 in Vertex {
-    noperspective vec3 edgeDistance;
+    //noperspective vec3 edgeDistance;
     vec4 worldPosition;
     vec3 worldNormal;
 	vec4 position;
@@ -25,7 +25,7 @@ uniform struct MaterialInfo
     float shininess;    // Specular shininess exponent
 } material;
 
-uniform mat4x4 NormalMatrix;
+uniform mat3x3 NormalMatrix;
 uniform	mat4x4 WorldMatrix;
 uniform mat4x4 ModelViewMatrix;
 uniform mat4x4 ModelViewProjectionMatrix;
@@ -62,4 +62,6 @@ void main()
     vec3 ambientAndDiff, spec;
     phongModel( ambientAndDiff, spec );
     fragColor = vec4( ambientAndDiff, 1.0 ) + vec4( spec, 1.0 );
+	//fragColor = vec4(input.worldNormal, 0.5f);
+	//fragColor = vec4(1.f,0.5f,0.0f, 0.5f);
 }

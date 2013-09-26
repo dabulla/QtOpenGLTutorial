@@ -78,11 +78,8 @@
     <ClCompile Include="Release\moc_window.cpp">
       <Filter>Generierte Dateien\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\qrc_terrain_tessellation.cpp">
-      <Filter>Generierte Dateien</Filter>
-    </ClCompile>
     <ClCompile Include="LoaderObj.cpp">
-      <Filter>Generierte Dateien</Filter>
+      <Filter>Source Dateien</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,74 +109,34 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="terrain_tessellation.qrc">
-      <Filter>Resource Dateien</Filter>
-    </CustomBuild>
-    <None Include="shaders\terraintessellation.frag">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\terraintessellation.geom">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\terraintessellation.tcs">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\terraintessellation.tes">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\terraintessellation.vert">
-      <Filter>Resource Dateien</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\object.frag">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\object.geom">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\object.vert">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\truhe.mtl">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\object - Kopie.geom">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\phong.frag">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\phong.vert">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\inline.frag">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\inline.vert">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\phongcomputenormals.geom">
-      <Filter>Resource Dateien</Filter>
-    </None>
-    <None Include="shaders\genNormals.comp">
-      <Filter>Resource Dateien</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="shaders\truhe_color.png">
-      <Filter>Resource Dateien</Filter>
-    </Image>
-    <Image Include="shaders\truhe_normal.png">
-      <Filter>Resource Dateien</Filter>
-    </Image>
-    <Image Include="shaders\truhe_spec.png">
-      <Filter>Resource Dateien</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="LoaderObj.h">
       <Filter>Header Dateien</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\shaders\inline.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\inline.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.tcs">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.tes">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phongcomputenormals.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phongcomputenormalsflat.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
   </ItemGroup>
 </Project>

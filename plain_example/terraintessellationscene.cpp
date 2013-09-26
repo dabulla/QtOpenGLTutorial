@@ -7,83 +7,16 @@
 #include <QGLWidget>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions_4_3_Core>
+#include <QQuickItem.h>
+#include <qslider.h>
+#include <qquickview.h>
+
 #include "LoaderObj.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 const float degToRad = float( M_PI / 180.0 );
-
-typedef struct
-{
-	float XYZW[4];
-	float RGBA[4];
-} Vertex;
-
-Vertex Vertices[] =
-{
-    { { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-    // Top
-    { { -0.2f, 0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-    { { 0.2f, 0.8f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-    { { 0.0f, 0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-    { { 0.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-    // Bottom
-    { { -0.2f, -0.8f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-    { { 0.2f, -0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-    { { 0.0f, -0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-    { { 0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-    // Left
-    { { -0.8f, -0.2f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-    { { -0.8f, 0.2f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-    { { -0.8f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-    { { -1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-    // Right
-    { { 0.8f, -0.2f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-    { { 0.8f, 0.2f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-    { { 0.8f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-    { { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }
-};
-
-GLuint Indices[] = {
-    // Top
-    0, 1, 3,
-    0, 3, 2,
-    3, 1, 4,
-    3, 4, 2,
-    // Bottom
-    0, 5, 7,
-    0, 7, 6,
-    7, 5, 8,
-    7, 8, 6,
-    // Left
-    0, 9, 11,
-    0, 11, 10,
-    11, 9, 12,
-    11, 12, 10,
-    // Right
-    0, 13, 15,
-    0, 15, 14,
-    15, 13, 16,
-    15, 16, 14
-};
-
-
-static unsigned int octa_indices[8*3]=
-{
-    0,1,2,0,2,3,
-    0,3,4,0,4,1,
-    5,2,1,5,3,2,
-    5,4,3,5,1,4
-};
-
-static float octa_verts[6*3]=
-{    
-    0,0,-1,100,0,0,
-    0,-10,0,-1,0,0,
-    0,10,0,0,0,10
-};
-
 
 TerrainTessellationScene::TerrainTessellationScene( QObject* parent )
     : AbstractScene( parent ),
@@ -93,6 +26,7 @@ TerrainTessellationScene::TerrainTessellationScene( QObject* parent )
       m_panAngle( 0.0f ),
       m_tiltAngle( 0.0f ),
       //m_patchBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_normalsBuffer( QOpenGLBuffer::VertexBuffer ),
       m_vertexBuffer( QOpenGLBuffer::VertexBuffer ),
       m_indexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_screenSpaceError( 12.0f ),
@@ -128,33 +62,32 @@ void TerrainTessellationScene::onMessageLogged( QOpenGLDebugMessage message )
 
 void TerrainTessellationScene::initialise()
 {	    
-	connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
-             this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
-             Qt::DirectConnection );
-	if ( m_logger.initialize() ) {
-        m_logger.startLogging( QOpenGLDebugLogger::SynchronousLogging );
-        m_logger.enableMessages();
-    }
-
-    m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_3_Core>();
+	if(DEBUG_OPENGL_ENABLED)
+	{
+		connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
+				 this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
+				 Qt::DirectConnection );
+		if ( m_logger.initialize() ) {
+			m_logger.startLogging( QOpenGLDebugLogger::SynchronousLogging );
+			m_logger.enableMessages();
+		}
+	}
+    m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_2_Core>();
     if ( !m_funcs )
     {
         qFatal("Requires OpenGL >= 4.0");
         exit( 1 );
     }
     m_funcs->initializeOpenGLFunctions();
-
     // Initialize resources
     prepareShaders();
     //prepareTextures();
     prepareVertexBuffers( m_heightMapSize );
+
     prepareVertexArrayObject();
 
-    // Enable depth testing
-    glEnable( GL_DEPTH_TEST );
-    //glEnable( GL_CULL_FACE );
+	//glCullFace
 
-    glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
 
     // Set the wireframe line properties
     QOpenGLShaderProgramPtr shader = m_material->shader();
@@ -166,7 +99,8 @@ void TerrainTessellationScene::initialise()
     shader->setUniformValue( "fog.color", QVector4D( 0.65f, 0.77f, 1.0f, 1.0f ) );
     shader->setUniformValue( "fog.minDistance", 50.0f );
     shader->setUniformValue( "fog.maxDistance", 128.0f );
-
+	
+    shader->release();
     // Get subroutine indices
     //for ( int i = 0; i < DisplayModeCount; ++i)
     //{
@@ -204,14 +138,28 @@ void TerrainTessellationScene::update( float t )
         m_tiltAngle = 0.0f;
     }
 }
+void TerrainTessellationScene::setRootObject(QQuickItem* ctx)
+{
+	m_rootObject = ctx;
+}
 
 void TerrainTessellationScene::render()
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
+    glClear( GL_COLOR_BUFFER_BIT );
+	
+    // Enable depth testing
+	m_funcs->glDepthMask(GL_TRUE);
+	m_funcs->glEnable( GL_DEPTH_TEST );
+	m_funcs->glDepthFunc(GL_LESS);
+    m_funcs->glEnable( GL_CULL_FACE );
+	m_funcs->glCullFace(GL_BACK);
+	m_funcs->glDisable(GL_BLEND);
 
     //m_material->bind();
     QOpenGLShaderProgramPtr shader = m_material->shader();
-
+	
+    shader->bind();
     //// Set the fragment shader display mode subroutine
     ////m_funcs->glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1,
     ////                                  &m_displayModeSubroutines[m_displayMode] );
@@ -237,16 +185,21 @@ void TerrainTessellationScene::render()
     QVector4D worldLightDirection( sinf( m_sunTheta * degToRad ), cosf( m_sunTheta * degToRad ), 0.0f, 0.0f );
     QMatrix4x4 worldToEyeNormal( normalMatrix );
     QVector4D lightDirection = worldToEyeNormal * worldLightDirection;
+
+	//m_qmlContext->findChild<QObject>(QString("materialKa")).property("value").toDouble();
+	double matKa = m_rootObject->property("material_Ka").toDouble();
+	double matKd = m_rootObject->property("material_Kd").toDouble();
+	double matKs = m_rootObject->property("material_Ks").toDouble();
+	float matShininess = m_rootObject->property("material_shininess").toDouble();
     shader->setUniformValue( "light.position", lightDirection );
     shader->setUniformValue( "light.intensity", QVector3D( 1.0f, 1.0f, 1.0f ) );
 
     // Set the material properties
-    shader->setUniformValue( "material.Ka", QVector3D( 0.1f, 0.1f, 0.1f ) );
-    shader->setUniformValue( "material.Kd", QVector3D( 1.0f, 1.0f, 1.0f ) );
-    shader->setUniformValue( "material.Ks", QVector3D( 0.3f, 0.3f, 0.3f ) );
-    shader->setUniformValue( "material.shininess", 10.0f );
+    shader->setUniformValue( "material.Ka", QVector3D( matKa, matKa, matKa ) );
+    shader->setUniformValue( "material.Kd", QVector3D( matKd, matKd, matKd ) );
+    shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
+    shader->setUniformValue( "material.shininess", matShininess );
 
-    shader->bind();
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
         //shader->setPatchVertexCount( 1 );
@@ -256,7 +209,7 @@ void TerrainTessellationScene::render()
 
 		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
-	//shader->release();
+	shader->release();
 }
 
 void TerrainTessellationScene::resize( int w, int h )
@@ -281,10 +234,12 @@ void TerrainTessellationScene::resize( int w, int h )
 
     // We need the viewport size to calculate tessellation levels
     QOpenGLShaderProgramPtr shader = m_material->shader();
+	shader->bind();
     shader->setUniformValue( "viewportSize", m_viewportSize );
 
     // The geometry shader also needs the viewport matrix
     shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
+	shader->release();
 }
 
 void TerrainTessellationScene::prepareShaders()
@@ -296,12 +251,13 @@ void TerrainTessellationScene::prepareShaders()
     //                        //":/shaders/terraintessellation.geom",
     //                        ":/shaders/terraintessellation.frag" );
 	//m_material->setShadersFromString( VertexShader, FragmentShader);
-	m_material->setShaders( "shaders/inline.vert", "shaders/inline.frag");
-	//m_material->setShaders( "shaders/phong.vert", "shaders/phong.frag");
-	//m_material->setShaders( "shaders/phong.vert", "shaders/phongcomputenormalsflat.geom", "shaders/phong.frag");
+	//m_material->setShaders( "resources/shaders/inline.vert", "resources/shaders/inline.frag");
+	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
+	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phongcomputenormalsflat.geom", "resources/shaders/phong.frag");
+	m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
 }
 
-void TerrainTessellationScene::prepareTextures()
+/*void TerrainTessellationScene::prepareTextures()
 {
     SamplerPtr sampler( new Sampler );
     sampler->create();
@@ -355,12 +311,13 @@ void TerrainTessellationScene::prepareTextures()
     m_material->setTextureUnitConfiguration( 3, snowTexture, tilingSampler, QByteArrayLiteral( "snowTexture" ) );
 
     m_funcs->glActiveTexture( GL_TEXTURE0 );
-}
+}*/
 
 void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
 {
 	//QFile file("shaders/truhe.obj");
-	QFile file("shaders/bunny.obj");
+	QFile file("resources/objects/bunny.obj3d");
+	//QFile file("resources/objects/san-miguel.obj");
 	qCritical(QDir::currentPath().toLatin1().data());
 	LoaderObj loader = LoaderObj(file);
 	m_elementCount = loader.getIndexCount();
@@ -370,14 +327,15 @@ void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
     m_normalsBuffer.create();
     m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_normalsBuffer.bind();
-	m_normalsBuffer.allocate(loader.getVertexCount()*3*sizeof(GLfloat) );
+	GLfloat *pB = loader.getCalculatedNormals();
+	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) );
     m_normalsBuffer.release();
 
     m_vertexBuffer.create();
     m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_vertexBuffer.bind();
 	GLfloat *pVB = loader.getVB();
-	m_vertexBuffer.allocate( pVB, m_vertexCount*loader.getFloatsPerVert()*sizeof(GLfloat) );
+	m_vertexBuffer.allocate( pVB, m_vertexCount*3*sizeof(GLfloat) );
     m_vertexBuffer.release();
 	
     m_indexBuffer.create();
@@ -389,7 +347,7 @@ void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
 
 	//genNormalsGPU();
 
-	int stride = loader.getFloatsPerVert()*sizeof(float);
+	int stride = 3*sizeof(float);
     m_vao.create();
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
@@ -398,13 +356,21 @@ void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
         m_vertexBuffer.bind();
         //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
 		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, stride);
-		shader->setAttributeBuffer("in_Color", GL_FLOAT, 0, 3, stride);
+		//shader->setAttributeBuffer("in_Color", GL_FLOAT, 0, 3, stride);
         shader->enableAttributeArray( "in_Position" );
-        shader->enableAttributeArray( "in_Color" );
+        //shader->enableAttributeArray( "in_Color" );
+
+        m_normalsBuffer.bind();
+		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, stride);
+        shader->enableAttributeArray( "in_Normal" );
 		//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
 		//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
 		m_indexBuffer.bind();
     }
+    m_material->shader()->release();
+    m_vertexBuffer.release();
+    m_normalsBuffer.release();
+    m_indexBuffer.release();
 }
 
 //void TerrainTessellationScene::prepareVertexBuffers( QSize heightMapSize )
@@ -449,7 +415,7 @@ void TerrainTessellationScene::prepareVertexArrayObject()
  //   }
 }
 
-
+/*
 void TerrainTessellationScene::genNormalsGPU() {
 	// Creating the compute shader, and the program object containing the shader
     GLuint progHandle = m_funcs->glCreateProgram();
@@ -496,4 +462,4 @@ void TerrainTessellationScene::genNormalsGPU() {
 	m_funcs->glUniform1f(m_funcs->glGetUniformLocation(progHandle, "maxFaces"), 0);
 	m_funcs->glDispatchCompute(m_vertexCount, m_elementCount, 1);
 	m_funcs->glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-}
+}*/

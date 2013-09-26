@@ -8,7 +8,8 @@ class AbstractScene;
 
 class QOpenGLContext;
 
-#define WINDOW_BASE QWindow
+//#define WINDOW_BASE QWindow
+#define WINDOW_BASE QQuickView
 
 class Window : public WINDOW_BASE
 {

@@ -12,11 +12,12 @@ Window::Window( QWindow* window )
       m_scene( new TerrainTessellationScene( this ) ),
       m_leftButtonPressed( false )
 {
-	//setClearBeforeRendering(false);
+	setClearBeforeRendering(false);
+	setColor(QColor(Qt::transparent));
     //show();
     // Tell Qt we will use OpenGL for this window
     setSurfaceType( OpenGLSurface );
-	//setPersistentOpenGLContext(true);
+	setPersistentOpenGLContext(true);
 
 
     resize( 1366, 768 );
@@ -44,21 +45,25 @@ Window::Window( QWindow* window )
 
     // This timer drives the scene updates
     QTimer* timer = new QTimer( this );
-	connect( timer, SIGNAL( timeout() ), this, SLOT( updateScene() ), Qt::DirectConnection );
+	connect( timer, SIGNAL( timeout() ), this, SLOT( update() ), Qt::DirectConnection );
     timer->start( 16 );
-	//connect( this, SIGNAL( beforeRendering() ), this, SLOT( updateScene() ), Qt::DirectConnection );
+	connect( this, SIGNAL( beforeRendering() ), this, SLOT( updateScene() ), Qt::DirectConnection );
 	//connect(this, SIGNAL(sceneGraphInitialized()), this, SLOT(onSceneGraphInitialized()), Qt::DirectConnection );
+	
 }
 
 QSurfaceFormat Window::getFormat()
 {
     QSurfaceFormat format;
     format.setDepthBufferSize( 24 );
-    format.setMajorVersion( 4 );
-    format.setMinorVersion( 3 );
+    format.setVersion( 4, 2 );
     format.setSamples( 4 );
-    format.setProfile( QSurfaceFormat::CoreProfile );
-    format.setOption( QSurfaceFormat::DebugContext );
+	format.setAlphaBufferSize(8);
+	format.setProfile( QSurfaceFormat::CompatibilityProfile );
+	
+	if(DEBUG_OPENGL_ENABLED)
+		format.setOption( QSurfaceFormat::DebugContext );
+
 	return format;
 }
 
@@ -74,12 +79,11 @@ void Window::paintGL()
 {
     // Make the context current
     m_context->makeCurrent( this );
-
     // Do the rendering (to the back buffer)
     m_scene->render();
 
     // Swap front/back buffers
-    m_context->swapBuffers( this );
+    //m_context->swapBuffers( this );
 	//m_context->doneCurrent();
 }
 
@@ -98,16 +102,20 @@ void Window::updateScene()
 		//m_context = openglContext();
 		
 		// Create an OpenGL context
-		m_context = new QOpenGLContext();
-		m_context->setFormat( getFormat() );
-		m_context->create();
-		m_context->makeCurrent( this );
+		//m_context = new QOpenGLContext();
+		//m_context->setFormat( getFormat() );
+		//m_context->create();
+		//m_context->makeCurrent( this );
+		m_context = openglContext();
 		m_scene->setContext(m_context);
 		initializeGL();
 		resizeGL();
 		
 		connect( this, SIGNAL( widthChanged( int ) ), this, SLOT( resizeGL() ) );
 		connect( this, SIGNAL( heightChanged( int ) ), this, SLOT( resizeGL() ) );
+
+		m_scene->setRootObject(rootObject());
+
 		firstTime = false;
 	}
     float time = m_time.elapsed() / 1000.0f;

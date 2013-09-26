@@ -4,6 +4,7 @@
 #include <QObject>
 
 class QOpenGLContext;
+class QQuickItem;
 
 class AbstractScene : public QObject
 {
@@ -36,6 +37,7 @@ public:
       */
     virtual void resize( int w, int h ) = 0;
 
+	virtual void setRootObject(QQuickItem* ctx) = 0;
 protected:
     QOpenGLContext* m_context;
 };
