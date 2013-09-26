@@ -1,5 +1,5 @@
-#ifndef TERRAINTESSELLATIONSCENE_H
-#define TERRAINTESSELLATIONSCENE_H
+#ifndef SHADERTESTSCENE_H
+#define SHADERTESTSCENE_H
 
 #include "abstractscene.h"
 #include "material.h"
@@ -105,4 +105,4 @@ private slots:
 	void onMessageLogged( QOpenGLDebugMessage message );
 };
 
-#endif // TERRAINTESSELLATIONSCENE_H
+#endif // SHADERTESTSCENE_H

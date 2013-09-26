@@ -16,6 +16,7 @@ Window::Window( QWindow* window )
 	  m_sourcePath(QUrl("ui/overlay.qml"))
 {
 	loadUi();
+	setTitle("ShaderTestScene");
 	//Make the UI adopt to the Window on resize
 	setResizeMode(QQuickView::SizeRootObjectToView);
     // Tell Qt we will use OpenGL for this window
