@@ -45,9 +45,6 @@
     <ClCompile Include="common\sampler.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
-    <ClCompile Include="terraintessellationscene.cpp">
-      <Filter>Source Dateien</Filter>
-    </ClCompile>
     <ClCompile Include="common\texture.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
@@ -66,12 +63,6 @@
     <ClCompile Include="Release\moc_camera.cpp">
       <Filter>Generierte Dateien\Release</Filter>
     </ClCompile>
-    <ClCompile Include="Debug\moc_terraintessellationscene.cpp">
-      <Filter>Generierte Dateien\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Release\moc_terraintessellationscene.cpp">
-      <Filter>Generierte Dateien\Release</Filter>
-    </ClCompile>
     <ClCompile Include="Debug\moc_window.cpp">
       <Filter>Generierte Dateien\Debug</Filter>
     </ClCompile>
@@ -79,6 +70,24 @@
       <Filter>Generierte Dateien\Release</Filter>
     </ClCompile>
     <ClCompile Include="LoaderObj.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="mediator.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_mediator.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_mediator.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_shadertestscene.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_shadertestscene.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="shadertestscene.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,13 +107,16 @@
     <ClInclude Include="common\sampler.h">
       <Filter>Header Dateien</Filter>
     </ClInclude>
-    <CustomBuild Include="terraintessellationscene.h">
-      <Filter>Header Dateien</Filter>
-    </CustomBuild>
     <ClInclude Include="common\texture.h">
       <Filter>Header Dateien</Filter>
     </ClInclude>
     <CustomBuild Include="window.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <CustomBuild Include="mediator.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shadertestscene.h">
       <Filter>Header Dateien</Filter>
     </CustomBuild>
   </ItemGroup>

@@ -26,14 +26,15 @@ uniform struct MaterialInfo
 } material;
 
 uniform mat3x3 NormalMatrix;
-uniform	mat4x4 WorldMatrix;
+uniform	mat4x4 ModelMatrix;
 uniform mat4x4 ModelViewMatrix;
 uniform mat4x4 ModelViewProjectionMatrix;
 
 void phongModel( out vec3 ambientAndDiff, out vec3 spec )
 {
+	vec3 lightPos = vec3(ModelViewMatrix*light.position);
     // Some useful vectors
-    vec3 s = normalize( vec3( light.position )/* - input.position.xyz*/ );
+    vec3 s = normalize( light.position.xyz - input.worldPosition.xyz );
     vec3 v = normalize( -input.position.xyz );
     vec3 n = normalize( input.normal );
     vec3 r = reflect( -s, n );

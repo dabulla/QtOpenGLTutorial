@@ -13,6 +13,7 @@
 
 #include <QOpenGLFunctions_4_2_Core>
 
+// Enabling Qt debug features will prevent nvidia nsight debugging tool to work. This is likely to be fixed in the future
 #define DEBUG_OPENGL_ENABLED 0
 
 class Camera;
@@ -20,12 +21,12 @@ class QQuickItem;
 
 class QOpenGLFunctions_4_2_Core;
 
-class TerrainTessellationScene : public AbstractScene
+class ShaderTestScene : public AbstractScene
 {
     Q_OBJECT
 
 public:
-    TerrainTessellationScene( QObject* parent = 0 );
+    ShaderTestScene( QObject* parent = 0 );
 
     virtual void initialise();
     virtual void update( float t );
@@ -43,20 +44,6 @@ public:
     void pan( float angle ) { m_panAngle = angle; }
     void tilt( float angle ) { m_tiltAngle = angle; }
 
-    // Terrain scales
-    void setTerrainHorizontalScale( float horizontalScale ) { m_horizontalScale = horizontalScale; }
-    float terrainHorizontalScale() const { return m_horizontalScale; }
-    void setTerrainVerticalScale( float verticalScale ) { m_verticalScale = verticalScale; }
-    float terrainVerticalScale() const { return m_verticalScale; }
-
-    // Sun position
-    void setSunAngle( float sunAngle ) { m_sunTheta = sunAngle; qDebug() << m_sunTheta; }
-    float sunAngle() const { return m_sunTheta; }
-
-    // Screen space error - tessellation control
-    void setScreenSpaceError( float error ) { m_screenSpaceError = error; qDebug() << error; }
-    float screenSpaceError() const { return m_screenSpaceError; }
-
     enum DisplayMode {
         SimpleWireFrame = 0,
         WorldHeight,
@@ -72,10 +59,10 @@ public:
     void setDisplayMode( DisplayMode displayMode ) { m_displayMode = displayMode; }
     DisplayMode displayMode() const { return m_displayMode; }
 
-private:
     void prepareShaders();
+private:
     void prepareTextures();
-    void prepareVertexBuffers( QSize heightMapSize );
+    void prepareVertexBuffers();
     void prepareVertexArrayObject();
 
 	void genNormalsGPU();
@@ -87,33 +74,24 @@ private:
     float m_panAngle;
     float m_tiltAngle;
 
-	QQuickItem* m_rootObject;;
+	QQuickItem* m_rootObject;
 	
-    unsigned int  m_elementCount;
-
     QMatrix4x4 m_viewportMatrix;
     QVector2D m_viewportSize;
 
-    // The terrain "object"
     QOpenGLVertexArrayObject m_vao;
 	QOpenGLBuffer m_vertexBuffer;
 	QOpenGLBuffer m_indexBuffer;
 
 	QOpenGLBuffer m_normalsBuffer;
 
-	int m_vertexCount;
-    //QOpenGLBuffer m_patchBuffer;
-    int m_patchCount;
+    unsigned int  m_elementCount;
+	unsigned int m_vertexCount;
+
     float m_screenSpaceError;
     MaterialPtr m_material;
 
-    // Terrain rendering controls
     QMatrix4x4 m_modelMatrix;
-    float m_horizontalScale;
-    float m_verticalScale;
-
-    // Angle of sun. 0 is directly overhead, 90 to the East, -90 to the West
-    float m_sunTheta;
 
     float m_time;
     const float m_metersToUnits;
@@ -123,7 +101,6 @@ private:
     QVector<GLuint> m_displayModeSubroutines;
 
     QOpenGLFunctions_4_2_Core* m_funcs;
-    QSize m_heightMapSize;
 private slots:
 	void onMessageLogged( QOpenGLDebugMessage message );
 };

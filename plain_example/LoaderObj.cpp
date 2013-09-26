@@ -20,7 +20,6 @@ LoaderObj::LoaderObj(QFile& file):
 	int floatsPerVert=0, floatsPerTexcoord=0;
 	QList<int> indices;
 	QString line;
-	int vertexTexCount = 0;
 	while(!stream.atEnd())
     {
 		QList<float> vertex;
@@ -160,7 +159,6 @@ LoaderObj::LoaderObj(QFile& file):
 		m_indices[i+1] = indices[i+1];
 		m_indices[i+2] = indices[i+2];
 	}
-	char buff[64];
 	qDebug() << "Vertices:" << m_vertexCount << "\nIndices:" << m_indexCount << "\nFloatsPerVert:" << m_floatsPerVert << "\n";
 
 
@@ -217,7 +215,7 @@ LoaderObj::LoaderObj(QFile& file):
 		adjacentFaces[i3]++;
 	}
 	//normalize
-	for(int i=0 ; i<m_vertexCount ; i++)
+	for(unsigned int i=0 ; i<m_vertexCount ; i++)
 	{
 		GLfloat invlength = 1.f/adjacentFaces[i];
 		m_normals[i*3] *= invlength;

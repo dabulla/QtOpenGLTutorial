@@ -23,8 +23,7 @@ private:
 
 protected slots:
     void resizeGL();
-    void paintGL();
-    void updateScene();
+    void updateAndRenderScene();
 
 protected:
     void keyPressEvent( QKeyEvent* e );
