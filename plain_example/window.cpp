@@ -12,8 +12,10 @@
 Window::Window( QWindow* window )
     : WINDOW_BASE( window ),
       m_scene( new ShaderTestScene( this ) ),
-      m_leftButtonPressed( false )
+      m_leftButtonPressed( false ),
+	  m_sourcePath(QUrl("ui/overlay.qml"))
 {
+	loadUi();
 	//Make the UI adopt to the Window on resize
 	setResizeMode(QQuickView::SizeRootObjectToView);
     // Tell Qt we will use OpenGL for this window
@@ -29,7 +31,7 @@ Window::Window( QWindow* window )
 
     setFormat( getFormat() );
 
-	rootContext()->setContextProperty("application", new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene)));
+	rootContext()->setContextProperty("application", new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this));
 
     create();
 
@@ -43,6 +45,18 @@ Window::Window( QWindow* window )
 
 	//Initialize all stuff that need OpenGL+QtQuickUI.
 	connect(this, SIGNAL(sceneGraphInitialized()), this, SLOT(onSceneGraphInitialized()), Qt::DirectConnection );
+
+	//connect(this, SIGNAL(this->closing()), this, SLOT(onClose()));
+}
+void Window::closing(QQuickCloseEvent* close)
+{
+	exit(0);
+	WINDOW_BASE::closing(close);
+}
+
+void Window::loadUi()
+{
+	setSource(m_sourcePath);
 }
 
 QSurfaceFormat Window::getFormat()

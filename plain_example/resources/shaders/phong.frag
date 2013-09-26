@@ -32,10 +32,10 @@ uniform mat4x4 ModelViewProjectionMatrix;
 
 void phongModel( out vec3 ambientAndDiff, out vec3 spec )
 {
-    vec3 lightDir = normalize( light.position.xyz + input.position.xyz );
+    vec3 lightDir = normalize( light.position.xyz - input.position.xyz );
     vec3 viewDir = normalize( input.position.xyz );
     vec3 normal = normalize( input.normal );
-    vec3 reflectDir  = reflect( -lightDir, normal );
+    vec3 reflectDir  = reflect( -lightDir, -normal );
 
     // Calculate the ambient contribution
     vec3 ambient = light.intensity * material.Ka;

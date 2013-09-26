@@ -10,7 +10,6 @@ int main( int argc, char* argv[] )
     Window w;
 	//w.setWidth(800);
 	//w.setHeight(450);
-	w.setSource(QUrl("ui/overlay.qml"));
 	//w.setSource(QUrl("ui/shader.qml"));
     w.show();
 	//QQuickView  viewer;

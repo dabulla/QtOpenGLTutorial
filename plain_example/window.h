@@ -18,6 +18,8 @@ class Window : public WINDOW_BASE
 public:
     Window( QWindow* window = 0 );
 
+	QUrl m_sourcePath;
+	void loadUi();
 private:
     void initializeGL();
 
@@ -33,6 +35,7 @@ protected:
     void mouseMoveEvent( QMouseEvent* e );
 	QSurfaceFormat getFormat();
 	
+	void closing(QQuickCloseEvent *close);
 protected slots :
     void onSceneGraphInitialized();
 

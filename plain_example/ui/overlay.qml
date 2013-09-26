@@ -4,8 +4,8 @@ import QtQuick.Layouts 1.0
 
 
 Rectangle {
-	color: "transparent"
-	//color.a: 0.2
+	//color: "transparent"
+	color.a: 0.2
 	property alias material_Ka: materialKaSlider.value;
 	property alias material_Kd: materialKdSlider.value;
 	property alias material_Ks: materialKsSlider.value;
@@ -29,6 +29,14 @@ Rectangle {
 						application.reloadShader();
 					}
 				}
+				Button {
+					anchors.horizontalCenter: parent.horizontalCenter
+					text: "Toggle ui"
+					onClicked: {
+						console.log("toggle ui");
+						application.toggleDialog();
+					}
+				}
 				Label {
 					text: "Ka: " + materialKaSlider.value
 				}
@@ -46,7 +54,7 @@ Rectangle {
 				Slider {
 					id: materialKdSlider
 					implicitWidth: 150
-					value: 1.0
+					value: 0.5
 					maximumValue: 1
 					minimumValue: 0
 					stepSize: 0.1

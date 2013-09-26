@@ -175,9 +175,9 @@ void ShaderTestScene::render()
 
     // Set the lighting parameters
 	double lightTheta = m_rootObject->property("lightTheta").toDouble();
-    QVector4D worldLightDirection( sinf( lightTheta * degToRad ), cosf( lightTheta * degToRad ), 0.0f, 0.0f );
+    QVector4D worldLightDirection( sinf( lightTheta * degToRad )*50.f, cosf( lightTheta * degToRad )*50.f, 0.0f, 0.0f );
     QMatrix4x4 worldToEyeNormal( normalMatrix );
-    QVector4D lightDirection = worldToEyeNormal * worldLightDirection;
+    QVector4D lightDirection = modelViewMatrix * worldLightDirection;
 
 	//m_qmlContext->findChild<QObject>(QString("materialKa")).property("value").toDouble();
 	double matKa = m_rootObject->property("material_Ka").toDouble();
