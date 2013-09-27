@@ -26,7 +26,7 @@ Window::Window( QWindow* window )
 	//root object should be transparent. This affects the glClearColor (verification needed)
 	setColor(QColor(Qt::transparent));
 
-	setPersistentOpenGLContext(true);
+	//setPersistentOpenGLContext(true);
 	
     resize( 1366, 768 );
 
@@ -63,7 +63,7 @@ void Window::loadUi()
 QSurfaceFormat Window::getFormat()
 {
     QSurfaceFormat format;
-    format.setVersion( 4, 2 );
+    format.setVersion( 4, 2 ); //Set OpenGL 4.2
 	//Enable AntiAliasing
     format.setSamples( 4 );
 	//Make sure there is a depth and alpha buffer

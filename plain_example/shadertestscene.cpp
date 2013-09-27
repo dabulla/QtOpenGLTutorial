@@ -81,11 +81,6 @@ void ShaderTestScene::initialise()
     //prepareTextures();
     prepareVertexBuffers();
 
-    prepareVertexArrayObject();
-
-	//glCullFace
-
-
     // Set the wireframe line properties
     QOpenGLShaderProgramPtr shader = m_material->shader();
     shader->bind();
@@ -112,6 +107,7 @@ void ShaderTestScene::update( float t )
 {
     m_modelMatrix.setToIdentity();
 	m_modelMatrix.scale(10.f);
+	m_modelMatrix.rotate(0.01f*t, 0.f, 1.f, 0.0f);
 
     // Store the time
     const float dt = t - m_time;
@@ -142,15 +138,15 @@ void ShaderTestScene::setRootObject(QQuickItem* ctx)
 
 void ShaderTestScene::render()
 {
-    glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
-    glClear( GL_COLOR_BUFFER_BIT );
+    m_funcs->glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
+    m_funcs->glClear( GL_COLOR_BUFFER_BIT );
 	
     // Enable depth testing
 	m_funcs->glDepthMask(GL_TRUE);
 	m_funcs->glEnable( GL_DEPTH_TEST );
 	m_funcs->glDepthFunc(GL_LESS);
     m_funcs->glEnable( GL_CULL_FACE );
-	m_funcs->glCullFace(GL_BACK);
+	m_funcs->glCullFace(GL_BACK); //TODO: Ausprobieren, Einstellbar machen
 	m_funcs->glDisable(GL_BLEND);
 
     //m_material->bind();
@@ -193,6 +189,7 @@ void ShaderTestScene::render()
     shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
     shader->setUniformValue( "material.shininess", matShininess );
 
+	//TODO: Klammer erläutern
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
         //shader->setPatchVertexCount( 1 );
@@ -203,12 +200,13 @@ void ShaderTestScene::render()
 		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 	shader->release();
+	m_funcs->glActiveTexture( GL_TEXTURE0 );
 }
 
 void ShaderTestScene::resize( int w, int h )
 {
     // Make sure the viewport covers the entire window
-    glViewport( 0, 0, w, h );
+	m_funcs->glViewport( 0, 0, w, h );
 
     m_viewportSize = QVector2D( float( w ), float( h ) );
 
@@ -254,23 +252,24 @@ void ShaderTestScene::prepareShaders()
 	m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
 }
 
-/*void ShaderTestScene::prepareTextures()
+void ShaderTestScene::prepareTextures()
 {
     SamplerPtr sampler( new Sampler );
     sampler->create();
-    sampler->setMinificationFilter( GL_LINEAR );
+    sampler->setMinificationFilter( GL_LINEAR_MIPMAP_LINEAR );
+    m_funcs->glSamplerParameterf( sampler->samplerId(), GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f );
     sampler->setMagnificationFilter( GL_LINEAR );
-    sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
-    sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
+    sampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
+    sampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
 
-    QImage heightMapImage( "../terrain_tessellation/heightmap-1024x1024.png" );
-    m_funcs->glActiveTexture( GL_TEXTURE0 );
+    QImage heightMapImage( "./resources/textures/grass.png" );
+	m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr heightMap( new Texture );
     heightMap->create();
     heightMap->bind();
     heightMap->setImage( heightMapImage );
-    m_heightMapSize = heightMapImage.size();
-    m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
+    //m_heightMapSize = heightMapImage.size();
+    m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "bunnyTex" ) );
 
     SamplerPtr tilingSampler( new Sampler );
     tilingSampler->create();
@@ -308,7 +307,7 @@ void ShaderTestScene::prepareShaders()
     m_material->setTextureUnitConfiguration( 3, snowTexture, tilingSampler, QByteArrayLiteral( "snowTexture" ) );
 
     m_funcs->glActiveTexture( GL_TEXTURE0 );
-}*/
+}
 
 void ShaderTestScene::prepareVertexBuffers()
 {
@@ -325,7 +324,7 @@ void ShaderTestScene::prepareVertexBuffers()
     m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_normalsBuffer.bind();
 	GLfloat *pB = loader.getCalculatedNormals();
-	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) );
+	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) ); //TODO: Kommentar (GPU)
     m_normalsBuffer.release();
 
     m_vertexBuffer.create();
@@ -364,52 +363,11 @@ void ShaderTestScene::prepareVertexBuffers()
 		//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
 		m_indexBuffer.bind();
     }
+	//TODO: Kommentar, nach vao alles releasen, nicht automatisch
     m_material->shader()->release();
     m_vertexBuffer.release();
     m_normalsBuffer.release();
     m_indexBuffer.release();
-}
-
-//void ShaderTestScene::prepareVertexBuffers( QSize heightMapSize )
-//{
-//
-//    m_vertexBuffer.create();
-//    m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-//    m_vertexBuffer.bind();
-//    //m_vertexBuffer.allocate( octa_verts, 6 * 3 * sizeof( float ) );
-//    m_vertexBuffer.allocate( Vertices, sizeof(Vertices) );
-//    m_vertexBuffer.release();
-//	
-//    m_indexBuffer.create();
-//    m_indexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-//    m_indexBuffer.bind();
-//    //m_indexBuffer.allocate( octa_indices, 8 * 3 * sizeof( int ) );
-//	m_indexBuffer.allocate( Indices, sizeof(Indices) );
-//    m_indexBuffer.release();
-//}
-
-void ShaderTestScene::prepareVertexArrayObject()
-{
-	//GLenum ErrorCheckValue = glGetError();
-	//const size_t BufferSize = sizeof(Vertices);
-	//const size_t VertexSize = sizeof(Vertices[0]);
-	//const size_t RgbOffset = sizeof(Vertices[0].XYZW);
- //   // Create a VAO for this "object"
- //   m_vao.create();
- //   {
- //       QOpenGLVertexArrayObject::Binder binder( &m_vao );
- //       QOpenGLShaderProgramPtr shader = m_material->shader();
- //       shader->bind();
- //       m_vertexBuffer.bind();
- //       //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
-	//	shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, 6*sizeof(float));
-	//	shader->setAttributeBuffer("in_Color", GL_FLOAT, RgbOffset, 3, 6*sizeof(float));
- //       shader->enableAttributeArray( "in_Position" );
- //       shader->enableAttributeArray( "in_Color" );
-	//	//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
-	//	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
-	//	m_indexBuffer.bind();
- //   }
 }
 
 /*

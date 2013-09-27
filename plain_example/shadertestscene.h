@@ -13,8 +13,8 @@
 
 #include <QOpenGLFunctions_4_2_Core>
 
-// Enabling Qt debug features will prevent nvidia nsight debugging tool to work. This is likely to be fixed in the future
-#define DEBUG_OPENGL_ENABLED 0
+// Enabling Qt debug features will prevent nvidia nsight debugging tool from working. This is likely to be fixed in the future
+#define DEBUG_OPENGL_ENABLED 1
 
 class Camera;
 class QQuickItem;
@@ -63,7 +63,6 @@ public:
 private:
     void prepareTextures();
     void prepareVertexBuffers();
-    void prepareVertexArrayObject();
 
 	void genNormalsGPU();
 

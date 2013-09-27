@@ -25,6 +25,12 @@ uniform struct MaterialInfo
     float shininess;    // Specular shininess exponent
 } material;
 
+uniform sampler2D bunnyTex;
+
+uniform sampler2D grassTexture;
+uniform sampler2D rockTexture;
+uniform sampler2D snowTexture;
+
 uniform mat3x3 NormalMatrix;
 uniform	mat4x4 ModelMatrix;
 uniform mat4x4 ModelViewMatrix;
@@ -60,7 +66,10 @@ void main()
 {
     vec3 ambientAndDiff, spec;
     phongModel( ambientAndDiff, spec );
-    fragColor = vec4( ambientAndDiff, 1.0 ) + vec4( spec, 1.0 );
+	
+    vec4 tex = texture( snowTexture, input.position.xy*10.0f );
+
+    fragColor = (vec4( ambientAndDiff, 1.0 ) + vec4( spec, 1.0 )) + tex;
 	//fragColor = vec4(input.worldNormal, 0.5f);
 	//fragColor = vec4(1.f,0.5f,0.0f, 0.5f);
 }
