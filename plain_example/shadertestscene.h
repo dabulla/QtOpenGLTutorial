@@ -59,8 +59,9 @@ public:
     void setDisplayMode( DisplayMode displayMode ) { m_displayMode = displayMode; }
     DisplayMode displayMode() const { return m_displayMode; }
 
-    void prepareShaders();
+	void recompileShader();
 private:
+    void prepareShaders();
     void prepareTextures();
     void prepareVertexBuffers();
 

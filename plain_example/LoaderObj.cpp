@@ -4,6 +4,19 @@
 #include <qdebug.h>
 
 using namespace std;
+//Two helper structs, because we can't use float arrays in templates
+struct VertexPos
+{
+	float x;
+	float y;
+	float z;
+};
+
+struct VertexTex
+{
+	float u;
+	float v;
+};
 
 LoaderObj::LoaderObj(QFile& file):
 	m_floatsPerVert(0),
@@ -15,18 +28,20 @@ LoaderObj::LoaderObj(QFile& file):
 		qCritical(file.errorString().toLatin1().data());
 	}
 	QTextStream stream(&file);
-	QList<QList<float>> vertices;
-	QList<QList<float>> texcoords;
+	QList<VertexPos> vertices;
+	QList<VertexTex> texcoords;
 	int floatsPerVert=0, floatsPerTexcoord=0;
 	QList<int> indices;
+	QStringList all = stream.readAll().split('\n', QString::SkipEmptyParts);
 	QString line;
 	while(!stream.atEnd())
     {
-		QList<float> vertex;
-		QList<float> texcoord;
+		VertexPos vertex;
+		VertexTex texcoord;
 		QStringList vals;
-		line = stream.readLine().trimmed();
-		switch(line[0].cell())
+		line = all.front();
+		all.pop_front();
+  		switch(line[0].cell())
 		{
 		case 'v':
 			if(line[1].cell() == 't')
@@ -51,27 +66,26 @@ LoaderObj::LoaderObj(QFile& file):
 			}
 			else
 			{
-				vals = line.split(QRegularExpression("[ \\t]+"));
-				vals.pop_front(); // get rid of 'v'
+				vals = line.split(' ', QString::SkipEmptyParts);
+				//vals.pop_front();
 				if(floatsPerVert == 0)
 				{
-					floatsPerVert = vals.size();
+					floatsPerVert = vals.size()-1; // get rid of 'v'
 				}
-				else if(floatsPerVert != vals.size())
+				else if(floatsPerVert != vals.size()-1)
 				{
 					qCritical("invariant number of vertex attributes in the file.");
 				}
-				while(!vals.empty())
-				{
-					vertex.push_back(vals.front().toFloat());
-					vals.pop_front();
-				}
+				vertex.x = vals[1].toFloat();
+				vertex.y = vals[2].toFloat();
+				vertex.z = vals[3].toFloat();
+
 				vertices.push_back(vertex);
 				++m_vertexCount;
 			}
 			break;
 		case 'f':
-			vals = line.split(QRegularExpression("[ \\t]+"));
+			vals = line.split(' ', QString::SkipEmptyParts);
 			vals.pop_front(); // get rid of 'f'
 			if(vals.size() == 3)
 			{
@@ -136,21 +150,21 @@ LoaderObj::LoaderObj(QFile& file):
 	
 	for(int i=m_vertexCount-1 ; i>=0 ; i--)
 	{
-		if(vertices[i].size() != floatsPerVert || (!texcoords.empty() && texcoords[i].size() != floatsPerTexcoord))
-		{
-			qCritical("Vertexpositions or texture coordinates were not correctly parsed.");
-		}
-		for(int j=vertices[i].size()-1 ; j>=0 ; j--)
-		{
-			m_vertices[i*m_floatsPerVert+j] = vertices[i][j];
-		}
-		if((!texcoords.empty()))
-		{
-			for(int j=texcoords[i].size()-1 ; j>=0 ; j--)
-			{
-				m_vertices[i*m_floatsPerVert+j+floatsPerVert] = texcoords[i][j];
-			}
-		}
+		//if(vertices[i].size() != floatsPerVert || (!texcoords.empty() && texcoords[i].size() != floatsPerTexcoord))
+		//{
+		//	qCritical("Vertexpositions or texture coordinates were not correctly parsed.");
+		//}
+		m_vertices[i*m_floatsPerVert+0] = vertices[i].x;
+		m_vertices[i*m_floatsPerVert+1] = vertices[i].y;
+		m_vertices[i*m_floatsPerVert+2] = vertices[i].z;
+		//if((!texcoords.empty()))
+		//{
+		//	for(int j=texcoords[i].size()-1 ; j>=0 ; j--)
+		//	{
+		//		m_vertices[i*m_floatsPerVert+j+floatsPerVert] = texcoords[i][0];
+		//		m_vertices[i*m_floatsPerVert+j+floatsPerVert] = texcoords[i][1];
+		//	}
+		//}
 	}
 
 	for(int i=0 ; i<indices.size()-1 ; i+=3)

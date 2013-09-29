@@ -72,13 +72,13 @@ void ShaderTestScene::initialise()
     m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_2_Core>();
     if ( !m_funcs )
     {
-        qFatal("Requires OpenGL >= 4.0");
+        qFatal("Requires OpenGL >= 4.0 and Qt compatible Profile.");
         exit( 1 );
     }
     m_funcs->initializeOpenGLFunctions();
     // Initialize resources
     prepareShaders();
-    //prepareTextures();
+    prepareTextures();
     prepareVertexBuffers();
 
     // Set the wireframe line properties
@@ -147,7 +147,7 @@ void ShaderTestScene::render()
 	m_funcs->glDepthFunc(GL_LESS);
     m_funcs->glEnable( GL_CULL_FACE );
 	m_funcs->glCullFace(GL_BACK); //TODO: Ausprobieren, Einstellbar machen
-	m_funcs->glDisable(GL_BLEND);
+	m_funcs->glEnable(GL_BLEND);
 
     //m_material->bind();
     QOpenGLShaderProgramPtr shader = m_material->shader();
@@ -189,17 +189,14 @@ void ShaderTestScene::render()
     shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
     shader->setUniformValue( "material.shininess", matShininess );
 
+	m_material->bind();
 	//TODO: Klammer erläutern
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
-        //shader->setPatchVertexCount( 1 );
-		//m_funcs->glDrawElements(GL_TRIANGLES, 8, GL_UNSIGNED_INT, (const GLvoid*)0);
-		// HACK
 		m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
-
-		//m_funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 	shader->release();
+	//m_material->release();
 	m_funcs->glActiveTexture( GL_TEXTURE0 );
 }
 
@@ -232,7 +229,11 @@ void ShaderTestScene::resize( int w, int h )
     shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
 	shader->release();
 }
-
+void ShaderTestScene::recompileShader()
+{
+	prepareShaders();
+	prepareTextures();
+}
 void ShaderTestScene::prepareShaders()
 {
 	if(m_material != 0)
@@ -254,22 +255,22 @@ void ShaderTestScene::prepareShaders()
 
 void ShaderTestScene::prepareTextures()
 {
-    SamplerPtr sampler( new Sampler );
+	SamplerPtr sampler( new Sampler );
     sampler->create();
-    sampler->setMinificationFilter( GL_LINEAR_MIPMAP_LINEAR );
-    m_funcs->glSamplerParameterf( sampler->samplerId(), GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f );
+    sampler->setMinificationFilter( GL_LINEAR );
     sampler->setMagnificationFilter( GL_LINEAR );
-    sampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
-    sampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
+    sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
+    sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
+
 
     QImage heightMapImage( "./resources/textures/grass.png" );
-	m_funcs->glActiveTexture( GL_TEXTURE0 );
+    m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr heightMap( new Texture );
     heightMap->create();
     heightMap->bind();
     heightMap->setImage( heightMapImage );
     //m_heightMapSize = heightMapImage.size();
-    m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "bunnyTex" ) );
+    m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
 
     SamplerPtr tilingSampler( new Sampler );
     tilingSampler->create();
@@ -279,7 +280,7 @@ void ShaderTestScene::prepareTextures()
     tilingSampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
     tilingSampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
 
-    QImage grassImage( "../terrain_tessellation/grass.png" );
+    QImage grassImage( "./resources/textures/grass.png" );
     m_funcs->glActiveTexture( GL_TEXTURE1 );
     TexturePtr grassTexture( new Texture );
     grassTexture->create();
@@ -288,7 +289,7 @@ void ShaderTestScene::prepareTextures()
     grassTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 1, grassTexture, tilingSampler, QByteArrayLiteral( "grassTexture" ) );
 
-    QImage rockImage( "../terrain_tessellation/rock.png" );
+    QImage rockImage( "./resources/textures/rock.png" );
     m_funcs->glActiveTexture( GL_TEXTURE2 );
     TexturePtr rockTexture( new Texture );
     rockTexture->create();
@@ -297,7 +298,7 @@ void ShaderTestScene::prepareTextures()
     rockTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 2, rockTexture, tilingSampler, QByteArrayLiteral( "rockTexture" ) );
 
-    QImage snowImage( "../terrain_tessellation/snowrocks.png" );
+    QImage snowImage( "./resources/textures/snowrocks.png" );
     m_funcs->glActiveTexture( GL_TEXTURE3 );
     TexturePtr snowTexture( new Texture );
     snowTexture->create();

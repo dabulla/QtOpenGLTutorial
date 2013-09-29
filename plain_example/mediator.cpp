@@ -19,7 +19,7 @@ Mediator::~Mediator()
 
 Q_INVOKABLE void Mediator::reloadShader()
 {
-	m_scene->prepareShaders();
+	m_scene->recompileShader();
 }
 
 Q_INVOKABLE void Mediator::toggleDialog()

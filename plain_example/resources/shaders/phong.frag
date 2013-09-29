@@ -67,9 +67,21 @@ void main()
     vec3 ambientAndDiff, spec;
     phongModel( ambientAndDiff, spec );
 	
-    vec4 tex = texture( snowTexture, input.position.xy*10.0f );
-
-    fragColor = (vec4( ambientAndDiff, 1.0 ) + vec4( spec, 1.0 )) + tex;
+	//vec4 tex = texture( snowTexture, input.normal.xy*1.0f );
+	//vec4 tex = texture( snowTexture, input.worldNormal.xy*1.0f );
+	//vec4 tex = texture( snowTexture, input.position.xy*1.0f );
+	//vec4 tex = texture( snowTexture, input.worldPosition.xy*1.0f );
+	//vec4 tex = texture( snowTexture, mix( input.worldPosition.xy, input.worldPosition.zy, (dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))+1)*0.5f ));
+	vec4 texZ = texture( snowTexture, input.worldPosition.xy );
+	vec4 texX = texture( snowTexture, input.worldPosition.zy );
+	vec4 texY = texture( snowTexture, input.worldPosition.xz );
+	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
+	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
+	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
+	vec4 tex = (texZ*mixZ+texY*mixY+texX*mixX);
+	//vec4 texComp = mix( texZ, texX, smoothstep( 0.75, 0.95, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))) ) );
+	//vec4 tex = mix( texComp, texY, smoothstep( 0.75, 0.95, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))) ) );
+    fragColor = (vec4( ambientAndDiff, 1.0 ) + vec4( spec, 1.0 )) * vec4(tex.xyz, 1.0);
 	//fragColor = vec4(input.worldNormal, 0.5f);
 	//fragColor = vec4(1.f,0.5f,0.0f, 0.5f);
 }
