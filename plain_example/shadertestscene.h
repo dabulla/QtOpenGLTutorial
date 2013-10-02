@@ -21,6 +21,7 @@ class QQuickItem;
 
 class QOpenGLFunctions_4_2_Core;
 
+
 class ShaderTestScene : public AbstractScene
 {
     Q_OBJECT
@@ -37,6 +38,8 @@ public:
 	virtual void setShaderUniformValue(const char *name,const int &val);
 	virtual void setShaderUniformValue(const char *name,const float &x, const float &y, const float &z);
 	
+	virtual void setCamerModeWalkthrough() { m_cameraMode = CAMERMODE_WALKTHROUGH;}
+	virtual void setCamerModeObjectInspection() { m_cameraMode = CAMERMODE_OBJECTINSPECTION;}
 
     // Camera motion control
     void setSideSpeed( float vx ) { m_v.setX( vx ); }
@@ -60,11 +63,17 @@ public:
         DisplayModeCount
     };
 
+	enum CameraMode {
+		CAMERMODE_WALKTHROUGH,
+		CAMERMODE_OBJECTINSPECTION
+	};
+
     void setDisplayMode( DisplayMode displayMode ) { m_displayMode = displayMode; }
     DisplayMode displayMode() const { return m_displayMode; }
 
 	void recompileShader();
 
+	unsigned int m_glCullMode;
 public slots:
 	virtual void setActiveShader(const ShaderInfo &shader);
 
@@ -75,6 +84,7 @@ private:
 
 	void genNormalsGPU();
 
+	bool m_isInitialized;
 	ShaderInfo m_shaderInfo;
 	QOpenGLDebugLogger m_logger;
     Camera* m_camera;
@@ -83,8 +93,9 @@ private:
     float m_panAngle;
     float m_tiltAngle;
 
+	CameraMode m_cameraMode;
 	//Note: we must not use a shared pointer here, as Qt would try to delete the element twice when the application exits.
-	QQuickItem* m_rootObject;
+	//QQuickItem* m_rootObject;
 	
     QMatrix4x4 m_viewportMatrix;
     QVector2D m_viewportSize;

@@ -52,17 +52,46 @@ Q_INVOKABLE void Mediator::toggleDialog()
 	}
 }
 
-Q_INVOKABLE void Mediator::setShaderUniformValue(const char *name, const float &val)
+Q_INVOKABLE void Mediator::setShaderUniformValue1f(const QString &name, const float &val)
 {
-	m_scene->setShaderUniformValue(name, val);
+	m_scene->setShaderUniformValue(name.toStdString().c_str(), val);
 }
 
-Q_INVOKABLE void Mediator::setShaderUniformValue(const char *name, const int &val)
+Q_INVOKABLE void Mediator::setShaderUniformValue1i(const QString &name, const int &val)
 {
-	m_scene->setShaderUniformValue(name, val);
+	m_scene->setShaderUniformValue(name.toStdString().c_str(), val);
 }
 
-Q_INVOKABLE void Mediator::setShaderUniformValue(const char *name, const float &x, const float &y, const float &z)
+Q_INVOKABLE void Mediator::setShaderUniformValue3f(const QString &name, const float &x, const float &y, const float &z)
 {
-	m_scene->setShaderUniformValue(name, x, y, z);
+	m_scene->setShaderUniformValue(name.toStdString().c_str(), x, y, z);
+}
+
+Q_INVOKABLE void Mediator::setCamerModeWalkthrough()
+{
+	m_scene->setCamerModeWalkthrough();
+}
+
+Q_INVOKABLE void Mediator::setCamerModeObjectInspection()
+{
+	m_scene->setCamerModeObjectInspection();
+}
+Q_INVOKABLE void Mediator::setCullmodeBack()
+{
+	m_scene->m_glCullMode = GL_BACK;
+}
+
+Q_INVOKABLE void Mediator::setCullmodeFront()
+{
+	m_scene->m_glCullMode = GL_FRONT;
+}
+
+Q_INVOKABLE void Mediator::setCullmodeBoth()
+{
+	m_scene->m_glCullMode = GL_FRONT_AND_BACK;
+}
+
+Q_INVOKABLE void Mediator::setCullmodeNone()
+{
+	m_scene->m_glCullMode = GL_NONE;
 }

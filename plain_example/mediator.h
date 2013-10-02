@@ -16,19 +16,28 @@ class Mediator : public QObject
 {
 	Q_OBJECT
 
-    Q_INVOKABLE void reloadShader();
-    Q_INVOKABLE void toggleDialog();
 	Q_PROPERTY(QVariant selectedShader READ selectedShader WRITE setSelectedShader NOTIFY selectedShaderChanged)
 
 signals:
-	void selectedShaderChanged(ShaderInfo shaderInfo);
+	void selectedShaderChanged(ShaderInfo shader);
 public:
 	Mediator(QObject *parent, ShaderTestScene *scene, Window *w);
 	~Mediator();
 
-	Q_INVOKABLE void setShaderUniformValue(const char *name, const float &val);
-	Q_INVOKABLE void setShaderUniformValue(const char *name, const int &val);
-	Q_INVOKABLE void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z);
+    Q_INVOKABLE void reloadShader();
+    Q_INVOKABLE void toggleDialog();
+
+    Q_INVOKABLE void setCamerModeWalkthrough();
+    Q_INVOKABLE void setCamerModeObjectInspection();
+
+    Q_INVOKABLE void setCullmodeBack();
+    Q_INVOKABLE void setCullmodeFront();
+    Q_INVOKABLE void setCullmodeBoth();
+    Q_INVOKABLE void setCullmodeNone();
+
+	Q_INVOKABLE void setShaderUniformValue1f(const QString &name, const float &val);
+	Q_INVOKABLE void setShaderUniformValue1i(const QString &name, const int &val);
+	Q_INVOKABLE void setShaderUniformValue3f(const QString &name, const float &x, const float &y, const float &z);
 
 
     void setSelectedShader(const QVariant &shader)

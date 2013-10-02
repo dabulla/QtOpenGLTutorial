@@ -36,7 +36,10 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_displayMode( SimpleWireFrame ),
       m_displayModeSubroutines( DisplayModeCount ),
       m_funcs( 0 ),
-	  m_material( 0 )
+	  m_material( 0 ),
+	  m_isInitialized(false),
+	  m_cameraMode(CameraMode::CAMERMODE_WALKTHROUGH),
+	  m_glCullMode(GL_BACK)
 {
     // Initialize the camera position and orientation
     m_camera->setPosition( QVector3D( -1.3f, 1.5f, 2.0f ) );
@@ -101,6 +104,7 @@ void ShaderTestScene::initialise()
     //                                       GL_FRAGMENT_SHADER,
     //                                       m_displayModeNames.at( i ).toLatin1() );
     //}
+	m_isInitialized = true;
 }
 
 void ShaderTestScene::update( float t )
@@ -114,23 +118,39 @@ void ShaderTestScene::update( float t )
     const float dt = t - m_time;
     m_time = t;
 
-    // Update the camera position and orientation
-    Camera::CameraTranslationOption option = m_viewCenterFixed
-                                           ? Camera::DontTranslateViewCenter
-                                           : Camera::TranslateViewCenter;
-    m_camera->translate( m_v * dt * m_metersToUnits, option );
+	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
+	{
+		// Update the camera position and orientation
+		Camera::CameraTranslationOption option = m_viewCenterFixed
+											   ? Camera::DontTranslateViewCenter
+											   : Camera::TranslateViewCenter;
+		m_camera->translate( m_v * dt * m_metersToUnits, option );
 
-    if ( !qFuzzyIsNull( m_panAngle ) )
-    {
-        m_camera->pan( m_panAngle, QVector3D( 0.0f, 1.0f, 0.0f ) );
-        m_panAngle = 0.0f;
-    }
+		if ( !qFuzzyIsNull( m_panAngle ) )
+		{
+			m_camera->pan( m_panAngle, QVector3D( 0.0f, 1.0f, 0.0f ) );
+			m_panAngle = 0.0f;
+		}
 
-    if ( !qFuzzyIsNull( m_tiltAngle ) )
-    {
-        m_camera->tilt( m_tiltAngle );
-        m_tiltAngle = 0.0f;
-    }
+		if ( !qFuzzyIsNull( m_tiltAngle ) )
+		{
+			m_camera->tilt( m_tiltAngle );
+			m_tiltAngle = 0.0f;
+		}
+	} else {
+
+		if ( !qFuzzyIsNull( m_panAngle ) )
+		{
+			m_camera->pan( m_panAngle, QVector3D( 0.0f, 1.0f, 0.0f ) );
+			m_panAngle = 0.0f;
+		}
+
+		if ( !qFuzzyIsNull( m_tiltAngle ) )
+		{
+			m_camera->tilt( m_tiltAngle );
+			m_tiltAngle = 0.0f;
+		}
+	}
 }
 
 void ShaderTestScene::render()
@@ -143,7 +163,7 @@ void ShaderTestScene::render()
 	m_funcs->glEnable( GL_DEPTH_TEST );
 	m_funcs->glDepthFunc(GL_LESS);
     m_funcs->glEnable( GL_CULL_FACE );
-	m_funcs->glCullFace(GL_BACK); //TODO: Ausprobieren, Einstellbar machen
+	m_funcs->glCullFace(m_glCullMode); //TODO: Ausprobieren, Einstellbar machen
 	m_funcs->glEnable(GL_BLEND);
 
 	//Avoid flickering after Qt Ui updates. Qt updates only a portion of the screen.
@@ -169,25 +189,19 @@ void ShaderTestScene::render()
     shader->setUniformValue( "NormalMatrix", normalMatrix );
     shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
 
-    // Set the lighting parameters
-	double lightTheta = m_rootObject->property("lightTheta").toDouble();
-    QVector4D worldLightDirection( sinf( lightTheta * degToRad )*50.f, cosf( lightTheta * degToRad )*50.f, 0.0f, 0.0f );
-    QMatrix4x4 worldToEyeNormal( normalMatrix );
-    QVector4D lightDirection = modelViewMatrix * worldLightDirection;
-
 	//m_qmlContext->findChild<QObject>(QString("materialKa")).property("value").toDouble();
-	double matKa = m_rootObject->property("material_Ka").toDouble();
-	double matKd = m_rootObject->property("material_Kd").toDouble();
-	double matKs = m_rootObject->property("material_Ks").toDouble();
-	float matShininess = m_rootObject->property("material_shininess").toDouble();
-    shader->setUniformValue( "light.position", lightDirection );
+	//double matKa = m_rootObject->property("material_Ka").toDouble();
+	//double matKd = m_rootObject->property("material_Kd").toDouble();
+	//double matKs = m_rootObject->property("material_Ks").toDouble();
+	//float matShininess = m_rootObject->property("material_shininess").toDouble();
+    //shader->setUniformValue( "light.position", lightDirection );
     shader->setUniformValue( "light.intensity", QVector3D( 1.0f, 1.0f, 1.0f ) );
 
     // Set the material properties
-    shader->setUniformValue( "material.Ka", QVector3D( matKa, matKa, matKa ) );
-    shader->setUniformValue( "material.Kd", QVector3D( matKd, matKd, matKd ) );
-    shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
-    shader->setUniformValue( "material.shininess", matShininess );
+    //shader->setUniformValue( "material.Ka", QVector3D( matKa, matKa, matKa ) );
+    //shader->setUniformValue( "material.Kd", QVector3D( matKd, matKd, matKd ) );
+    //shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
+    //shader->setUniformValue( "material.shininess", matShininess );
 
 	m_material->bind();
 	//TODO: Klammer erläutern
@@ -229,11 +243,13 @@ void ShaderTestScene::resize( int w, int h )
     shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
 	shader->release();
 }
+
 void ShaderTestScene::recompileShader()
 {
 	prepareShaders();
 	prepareTextures();
 }
+
 void ShaderTestScene::prepareShaders()
 {
 	//if(m_material.isNull())
@@ -243,7 +259,7 @@ void ShaderTestScene::prepareShaders()
 		m_material = new Material;
 	} else {
 		m_material->shader()->release();
-		delete m_material;
+		//delete m_material;
 		m_material = new Material;
 		//m_material.reset(new Material);
 	}
@@ -378,14 +394,34 @@ void ShaderTestScene::prepareVertexBuffers()
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 {
+	if(!m_isInitialized)
+	{
+		return;
+	}
+	qDebug() << "Set Uniform \"" << name << "\": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
-	shader->setUniformValue( name, val );
+
+    // Set the lighting parameters
+	if(QString(name) == QString("lightTheta"))
+	{
+		QVector4D worldLightDirection( sinf( val * degToRad )*50.f, cosf( val * degToRad )*50.f, 0.0f, 0.0f );
+		//QMatrix4x4 worldToEyeNormal( (m_camera->viewMatrix() * m_modelMatrix).normalMatrix() );
+		QVector4D lightDirection = (m_camera->viewMatrix() * m_modelMatrix) * worldLightDirection;
+		shader->setUniformValue( "light.position", lightDirection );
+	} else {
+		shader->setUniformValue( name, val );
+	}
 	shader->release();
 }
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 {
+	if(!m_isInitialized)
+	{
+		return;
+	}
+	qDebug() << "Set Uniform \"" << name << "\": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, val );
@@ -394,6 +430,11 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, const float &y, const float &z)
 {
+	if(!m_isInitialized)
+	{
+		return;
+	}
+	qDebug() << "Set Uniform \"" << name << "\": (" << x << ", " << y << ", " << z << ")";
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, QVector3D( x, y, z ) );
@@ -406,9 +447,11 @@ void ShaderTestScene::setActiveShader(const ShaderInfo &shader)
 	m_shaderInfo.fragmentShaderProc = shader.fragmentShaderProc;
 	m_shaderInfo.vertexShaderFile = shader.vertexShaderFile;
 	m_shaderInfo.vertexShaderProc = shader.vertexShaderProc;
-	recompileShader();
+	if(m_isInitialized)
+	{
+		recompileShader();
+	}
 }
-
 /*
 void ShaderTestScene::genNormalsGPU() {
 	// Creating the compute shader, and the program object containing the shader

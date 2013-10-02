@@ -16,6 +16,9 @@ Window::Window( QWindow* window )
 	  m_sourcePath(QUrl("ui/overlay.qml"))
 {
 	Mediator* mediator = new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this);
+
+	connect( mediator, SIGNAL( selectedShaderChanged(ShaderInfo) ), m_scene, SLOT( setActiveShader(ShaderInfo) ), Qt::DirectConnection );
+
 	rootContext()->setContextProperty("application", mediator);
 	loadUi();
 	setTitle("ShaderTestScene");
@@ -35,7 +38,6 @@ Window::Window( QWindow* window )
     setFormat( getFormat() );
 
 	
-	connect( mediator, SIGNAL( selectedShaderChanged(shader) ), m_scene, SLOT( m_scene->setActiveShader(shader) ), Qt::DirectConnection );
 
     create();
 

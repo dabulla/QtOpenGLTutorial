@@ -55,9 +55,12 @@ public:
 		// eg. 
 		//TODO: datatypes for uniforms
 	*/
-	virtual void setShaderUniformValue(const char *name, const float &val) = 0;
-	virtual void setShaderUniformValue(const char *name, const int &val) = 0;
-	virtual void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z) = 0;
+	//virtual void setShaderUniformValue(const char *name, const float &val) = 0;
+	//virtual void setShaderUniformValue(const char *name, const int &val) = 0;
+	//virtual void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z) = 0;
+	//
+	//virtual void setCamerModeWalkthrough() = 0;
+	//virtual void setCamerModeObjectInspection() = 0;
 
 public slots:
 	virtual void setActiveShader(const ShaderInfo &) = 0;
