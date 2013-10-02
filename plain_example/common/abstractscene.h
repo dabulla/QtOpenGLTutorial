@@ -6,6 +6,19 @@
 class QOpenGLContext;
 class QQuickItem;
 
+//ShaderInfo: Contains Info about the ShaderProcedure that can be used.
+// Two files can be specified the add a fragment and vertex shader.
+// moreover a subroutine can be specified. This way different shaders can be defined in one file.
+// This has the advantage, that common function in the file can be reused: e.g. phong(...) can be used for
+// a plain phong shader and a textured phong shader
+struct ShaderInfo
+{
+	QString vertexShaderFile;
+	QString vertexShaderProc;
+	QString fragmentShaderFile;
+	QString fragmentShaderProc;
+};
+
 class AbstractScene : public QObject
 {
     Q_OBJECT
@@ -37,7 +50,17 @@ public:
       */
     virtual void resize( int w, int h ) = 0;
 
-	virtual void setRootObject(QQuickItem* ctx) = 0;
+	/**
+		Set a Shader uniform. The concrete scene must be able to call the correct glUniformxxx variable.
+		// eg. 
+		//TODO: datatypes for uniforms
+	*/
+	virtual void setShaderUniformValue(const char *name, const float &val) = 0;
+	virtual void setShaderUniformValue(const char *name, const int &val) = 0;
+	virtual void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z) = 0;
+
+public slots:
+	virtual void setActiveShader(const ShaderInfo &) = 0;
 protected:
     QOpenGLContext* m_context;
 };

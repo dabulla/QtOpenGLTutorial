@@ -3,6 +3,7 @@
 
 #include <qquickview.h>
 #include <QTime>
+#include <qquickitem.h>
 
 class AbstractScene;
 

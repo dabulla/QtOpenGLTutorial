@@ -33,7 +33,11 @@ public:
     virtual void render();
     virtual void resize( int w, int h );
 
-	void setRootObject(QQuickItem* ctx);
+	virtual void setShaderUniformValue(const char *name,const float &val);
+	virtual void setShaderUniformValue(const char *name,const int &val);
+	virtual void setShaderUniformValue(const char *name,const float &x, const float &y, const float &z);
+	
+
     // Camera motion control
     void setSideSpeed( float vx ) { m_v.setX( vx ); }
     void setVerticalSpeed( float vy ) { m_v.setY( vy ); }
@@ -60,6 +64,10 @@ public:
     DisplayMode displayMode() const { return m_displayMode; }
 
 	void recompileShader();
+
+public slots:
+	virtual void setActiveShader(const ShaderInfo &shader);
+
 private:
     void prepareShaders();
     void prepareTextures();
@@ -67,6 +75,7 @@ private:
 
 	void genNormalsGPU();
 
+	ShaderInfo m_shaderInfo;
 	QOpenGLDebugLogger m_logger;
     Camera* m_camera;
     QVector3D m_v;
@@ -74,6 +83,7 @@ private:
     float m_panAngle;
     float m_tiltAngle;
 
+	//Note: we must not use a shared pointer here, as Qt would try to delete the element twice when the application exits.
 	QQuickItem* m_rootObject;
 	
     QMatrix4x4 m_viewportMatrix;
@@ -89,7 +99,9 @@ private:
 	unsigned int m_vertexCount;
 
     float m_screenSpaceError;
-    MaterialPtr m_material;
+	
+	//Note: we must not use a shared pointer here, as Qt would try to delete the element twice when the application exits.
+    Material* m_material;
 
     QMatrix4x4 m_modelMatrix;
 

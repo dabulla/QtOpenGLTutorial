@@ -14,7 +14,7 @@ private:
 	GLuint* m_indices;
 	GLfloat* m_normals;
 public:
-	LoaderObj(QFile& file);
+	LoaderObj(const char* fileName);
 	virtual ~LoaderObj(void);
 	
 	GLuint getVertexCount() const;

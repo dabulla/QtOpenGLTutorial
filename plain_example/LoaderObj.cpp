@@ -19,7 +19,7 @@ struct VertexTex
 };
 
 LoaderObj::LoaderObj(QFile& file):
-	m_floatsPerVert(0),
+	m_floatsPerVert(3),
 	m_vertexCount(0),
 	m_indexCount(0)
 {
@@ -30,60 +30,105 @@ LoaderObj::LoaderObj(QFile& file):
 	QTextStream stream(&file);
 	QList<VertexPos> vertices;
 	QList<VertexTex> texcoords;
-	int floatsPerVert=0, floatsPerTexcoord=0;
+	int floatsPerVert=3, floatsPerTexcoord=2;
 	QList<int> indices;
-	QStringList all = stream.readAll().split('\n', QString::SkipEmptyParts);
+	QString allLines = stream.readAll();
+	QStringList all = allLines.split('\n', QString::SkipEmptyParts);
 	QString line;
-	while(!stream.atEnd())
+	//while(!stream.atEnd())
+	int curLine = 0;
+	int numLines = all.size();
+	while(curLine < numLines)
     {
+		if(curLine%10000==0)
+		{
+			qDebug() << "line: " << curLine << " of " << numLines << " (" << ((float)curLine/(float)numLines)*100.f << "%)";
+		}
 		VertexPos vertex;
 		VertexTex texcoord;
 		QStringList vals;
-		line = all.front();
-		all.pop_front();
-  		switch(line[0].cell())
+		QByteArray ba = all[curLine].toLatin1();
+		line = all[curLine];
+		//const char* pszBuff = line.toStdString().c_str();
+		const char* pszBuff = ba.constData();
+  		switch(pszBuff[0])
 		{
 		case 'v':
-			if(line[1].cell() == 't')
-			{
-				//vals = line.split(QRegularExpression("[ \\t]+"));
-				//vals.pop_front(); // get rid of 'vt'
-				//if(floatsPerTexcoord == 0)
-				//{
-				//	floatsPerTexcoord = vals.size();
-				//}
-				//else if(floatsPerTexcoord != vals.size())
-				//{
-				//	qCritical("invariant number of vertex attributes (texcoords) in the file.");
-				//}
-				//while(!vals.empty())
-				//{
-				//	texcoord.push_back(vals.front().toFloat());
-				//	vals.pop_front();
-				//}
-				//texcoords.push_back(texcoord);
-				//++vertexTexCount;
-			}
-			else
-			{
-				vals = line.split(' ', QString::SkipEmptyParts);
-				//vals.pop_front();
-				if(floatsPerVert == 0)
-				{
-					floatsPerVert = vals.size()-1; // get rid of 'v'
-				}
-				else if(floatsPerVert != vals.size()-1)
-				{
-					qCritical("invariant number of vertex attributes in the file.");
-				}
-				vertex.x = vals[1].toFloat();
-				vertex.y = vals[2].toFloat();
-				vertex.z = vals[3].toFloat();
-
+			switch(pszBuff[1]){
+			case ' ':
+				//Create new vertex
+				sscanf_s(pszBuff, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
 				vertices.push_back(vertex);
 				++m_vertexCount;
+				break;
+			case 'n':
+				//Create new vertex normal
+				//sscanf(pszBuff, "vn %f %f %f", &x, &y, &z);
+				//normals.push_back(vertex);
+				//++m_normalsCount;
+				break;
+			case 't':
+				//Create new UV
+				//sscanf(pszBuff, "vt %f %f", &u, &v);
+				//texCoords.push_back(vertex);
+				//++m_texCount;
+				break;
 			}
 			break;
+
+		//case 'v':
+		//	if(line[1].cell() == 't')
+		//	{
+		//		//vals = line.split(QRegularExpression("[ \\t]+"));
+		//		//vals.pop_front(); // get rid of 'vt'
+		//		//if(floatsPerTexcoord == 0)
+		//		//{
+		//		//	floatsPerTexcoord = vals.size();
+		//		//}
+		//		//else if(floatsPerTexcoord != vals.size())
+		//		//{
+		//		//	qCritical("invariant number of vertex attributes (texcoords) in the file.");
+		//		//}
+		//		//while(!vals.empty())
+		//		//{
+		//		//	texcoord.push_back(vals.front().toFloat());
+		//		//	vals.pop_front();
+		//		//}
+		//		//texcoords.push_back(texcoord);
+		//		//++vertexTexCount;
+		//	}
+		//	else
+		//	{
+		//		//vals = line.split(' ', QString::SkipEmptyParts);
+		//		//san miguel model has two blanks after 'v'. Adding saves us an if 
+		//		int ix = 2+(line[2] == ' ');
+		//		line = line.remove(0,ix);
+		//		int iy = line.indexOf(' ', 3);
+		//		int iz = line.indexOf(' ', iy+3);
+		//		QString x = line.remove(iy+1);
+		//		QString y = line.remove(ix,iy-ix+1).remove(iz-(iy-ix)+1);
+		//		QString z = line.remove(ix,iz-ix+1);
+		//		vertex.x = x.toFloat();
+		//		vertex.y = line.toFloat();
+		//		vertex.z = line.toFloat();
+		//		//vals.pop_front();
+		//		//if(floatsPerVert == 0)
+		//		//{
+		//		//	floatsPerVert = vals.size()-1; // get rid of 'v'
+		//		//}
+		//		//else if(floatsPerVert != vals.size()-1)
+		//		//{
+		//		//	qCritical("invariant number of vertex attributes in the file.");
+		//		//}
+		//		//vals[1].
+		//		//vertex.x = vals[1].toFloat();
+		//		//vertex.y = vals[2].toFloat();
+		//		//vertex.z = vals[3].toFloat();
+
+		//		vertices.push_back(vertex);
+		//		++m_vertexCount;
+		//	}
+		//	break;
 		case 'f':
 			vals = line.split(' ', QString::SkipEmptyParts);
 			vals.pop_front(); // get rid of 'f'
@@ -138,9 +183,10 @@ LoaderObj::LoaderObj(QFile& file):
 		default:
 			;//just go on
 		}
+		curLine++;
     }
 
-	m_floatsPerVert = floatsPerVert+floatsPerTexcoord;
+	m_floatsPerVert = floatsPerVert;//+floatsPerTexcoord;
 	//m_vertices contains only positions. I could also be calls "m_positions". Normals can also be counted to a vertex.
 	//Historically positions and normals where in the same buffer. The interpretation of the floats in the buffer could be configured.
 	// In new versions of OpenGL, position and normals can be defined in different buffers.

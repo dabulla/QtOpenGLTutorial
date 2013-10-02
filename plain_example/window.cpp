@@ -15,6 +15,8 @@ Window::Window( QWindow* window )
       m_leftButtonPressed( false ),
 	  m_sourcePath(QUrl("ui/overlay.qml"))
 {
+	Mediator* mediator = new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this);
+	rootContext()->setContextProperty("application", mediator);
 	loadUi();
 	setTitle("ShaderTestScene");
 	//Make the UI adopt to the Window on resize
@@ -32,7 +34,8 @@ Window::Window( QWindow* window )
 
     setFormat( getFormat() );
 
-	rootContext()->setContextProperty("application", new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this));
+	
+	connect( mediator, SIGNAL( selectedShaderChanged(shader) ), m_scene, SLOT( m_scene->setActiveShader(shader) ), Qt::DirectConnection );
 
     create();
 
@@ -99,7 +102,6 @@ void Window::onSceneGraphInitialized()
 		connect( this, SIGNAL( heightChanged( int ) ), this, SLOT( resizeGL() ) );
 
 		//The Scene gets a UI-Object so it can look up shader variables
-		m_scene->setRootObject(rootObject());
 }
 
 void Window::initializeGL()

@@ -10,6 +10,7 @@
 #include <QQuickItem.h>
 #include <qslider.h>
 #include <qquickview.h>
+#include <qscopedpointer.h>
 
 #include "LoaderObj.h"
 
@@ -35,7 +36,7 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_displayMode( SimpleWireFrame ),
       m_displayModeSubroutines( DisplayModeCount ),
       m_funcs( 0 ),
-	  m_material(0)
+	  m_material( 0 )
 {
     // Initialize the camera position and orientation
     m_camera->setPosition( QVector3D( -1.3f, 1.5f, 2.0f ) );
@@ -77,8 +78,7 @@ void ShaderTestScene::initialise()
     }
     m_funcs->initializeOpenGLFunctions();
     // Initialize resources
-    prepareShaders();
-    prepareTextures();
+    recompileShader();
     prepareVertexBuffers();
 
     // Set the wireframe line properties
@@ -106,8 +106,9 @@ void ShaderTestScene::initialise()
 void ShaderTestScene::update( float t )
 {
     m_modelMatrix.setToIdentity();
-	m_modelMatrix.scale(10.f);
-	m_modelMatrix.rotate(0.01f*t, 0.f, 1.f, 0.0f);
+	//m_modelMatrix.scale(0.05f); // Crytek sponza
+	m_modelMatrix.scale(10.f); // bunny
+	m_modelMatrix.rotate(10.1f*t, 0.f, 1.f, 0.0f);
 
     // Store the time
     const float dt = t - m_time;
@@ -131,10 +132,6 @@ void ShaderTestScene::update( float t )
         m_tiltAngle = 0.0f;
     }
 }
-void ShaderTestScene::setRootObject(QQuickItem* ctx)
-{
-	m_rootObject = ctx;
-}
 
 void ShaderTestScene::render()
 {
@@ -149,6 +146,9 @@ void ShaderTestScene::render()
 	m_funcs->glCullFace(GL_BACK); //TODO: Ausprobieren, Einstellbar machen
 	m_funcs->glEnable(GL_BLEND);
 
+	//Avoid flickering after Qt Ui updates. Qt updates only a portion of the screen.
+	//If we do not reset viewport size, our rendering will be of the size of the last gui-element qt drawed.
+	m_funcs->glViewport( 0, 0, m_viewportSize.x(), m_viewportSize.y() );
     //m_material->bind();
     QOpenGLShaderProgramPtr shader = m_material->shader();
 	
@@ -236,11 +236,17 @@ void ShaderTestScene::recompileShader()
 }
 void ShaderTestScene::prepareShaders()
 {
-	if(m_material != 0)
+	//if(m_material.isNull())
+	if(m_material == 0)
 	{
-		m_material.clear();
+		//m_material = MaterialPtr( new Material );
+		m_material = new Material;
+	} else {
+		m_material->shader()->release();
+		delete m_material;
+		m_material = new Material;
+		//m_material.reset(new Material);
 	}
-    m_material = MaterialPtr( new Material );
     //m_material->setShaders( ":/shaders/terraintessellation.vert",
     //                        //":/shaders/terraintessellation.tcs",
     //                        //":/shaders/terraintessellation.tes",
@@ -250,7 +256,7 @@ void ShaderTestScene::prepareShaders()
 	//m_material->setShaders( "resources/shaders/inline.vert", "resources/shaders/inline.frag");
 	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
 	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phongcomputenormalsflat.geom", "resources/shaders/phong.frag");
-	m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
+	m_material->setShaders( m_shaderInfo.vertexShaderFile, m_shaderInfo.fragmentShaderFile);
 }
 
 void ShaderTestScene::prepareTextures()
@@ -262,14 +268,12 @@ void ShaderTestScene::prepareTextures()
     sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
     sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
 
-
     QImage heightMapImage( "./resources/textures/grass.png" );
     m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr heightMap( new Texture );
     heightMap->create();
     heightMap->bind();
     heightMap->setImage( heightMapImage );
-    //m_heightMapSize = heightMapImage.size();
     m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
 
     SamplerPtr tilingSampler( new Sampler );
@@ -313,10 +317,11 @@ void ShaderTestScene::prepareTextures()
 void ShaderTestScene::prepareVertexBuffers()
 {
 	//QFile file("shaders/truhe.obj");
-	QFile file("resources/objects/bunny.obj3d");
+	//QFile file("resources/objects/bunny.obj3d");
 	//QFile file("resources/objects/san-miguel.obj");
-	qCritical(QDir::currentPath().toLatin1().data());
-	LoaderObj loader = LoaderObj(file);
+	LoaderObj loader = LoaderObj("resources/objects/bunny.obj3d");
+	//LoaderObj loader = LoaderObj("resources/objects/san-miguel.obj");
+	//LoaderObj loader = LoaderObj("resources/objects/crytek-sponza/sponza.obj");
 	m_elementCount = loader.getIndexCount();
 	m_vertexCount = loader.getVertexCount();
 	
@@ -348,7 +353,7 @@ void ShaderTestScene::prepareVertexBuffers()
     m_vao.create();
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
-        QOpenGLShaderProgramPtr shader = m_material->shader();
+		QOpenGLShaderProgramPtr shader = m_material->shader();
         shader->bind();
         m_vertexBuffer.bind();
         //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
@@ -369,6 +374,39 @@ void ShaderTestScene::prepareVertexBuffers()
     m_vertexBuffer.release();
     m_normalsBuffer.release();
     m_indexBuffer.release();
+}
+
+void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
+{
+	QOpenGLShaderProgramPtr shader = m_material->shader();
+	shader->bind();
+	shader->setUniformValue( name, val );
+	shader->release();
+}
+
+void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
+{
+	QOpenGLShaderProgramPtr shader = m_material->shader();
+	shader->bind();
+	shader->setUniformValue( name, val );
+	shader->release();
+}
+
+void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, const float &y, const float &z)
+{
+	QOpenGLShaderProgramPtr shader = m_material->shader();
+	shader->bind();
+	shader->setUniformValue( name, QVector3D( x, y, z ) );
+	shader->release();
+}
+
+void ShaderTestScene::setActiveShader(const ShaderInfo &shader)
+{
+	m_shaderInfo.fragmentShaderFile = shader.fragmentShaderFile;
+	m_shaderInfo.fragmentShaderProc = shader.fragmentShaderProc;
+	m_shaderInfo.vertexShaderFile = shader.vertexShaderFile;
+	m_shaderInfo.vertexShaderProc = shader.vertexShaderProc;
+	recompileShader();
 }
 
 /*
