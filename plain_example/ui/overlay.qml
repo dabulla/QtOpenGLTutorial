@@ -18,7 +18,7 @@ Rectangle {
             name: "Material Ka"
             uniformName: "material.Ka"
             isVector: true
-            defaultValue: 0.5
+            defaultValue: 0.1
             minValue: 0
             maxValue: 3
             step: 0.1
@@ -27,7 +27,7 @@ Rectangle {
             name: "Material Kd"
             uniformName: "material.Kd"
             isVector: true
-            defaultValue: 0.2
+            defaultValue: 0.7
             minValue: 0
             maxValue: 3
             step: 0.1
@@ -36,7 +36,7 @@ Rectangle {
             name: "Material Ks"
             uniformName: "material.Ks"
             isVector: true
-            defaultValue: 0.2
+            defaultValue: 1.0
             minValue: 0
             maxValue: 10
             stee: 0.1
@@ -54,7 +54,7 @@ Rectangle {
             name: "material.shininess"
             uniformName: "material.shininess"
             isVector: false
-            defaultValue: 10.0
+            defaultValue: 100.0
             minValue: 0
             maxValue: 1000
             step: 0.01
@@ -84,23 +84,25 @@ Rectangle {
     Rectangle {
         id: rootRectangle
         width: 200
-		anchors.right: parent.right
-		anchors.top: parent.top
-		anchors.bottom: parent.bottom
+        anchors.right: parent.right
+//		anchors.top: parent.top
+//		anchors.bottom: parent.bottom
         //color.a: 0.5
-		GroupBox {
-//            anchors.horizontalCenter: parent.horizontalCenter
-//            anchors.bottom: parent.bottom
-//            anchors.top: parent.top
+        color: "transparent"
+        GroupBox {
+            //anchors.horizontalCenter: parent.horizontalCenter
+            //anchors.bottom: parent.bottom
+            //anchors.top: parent.top
             anchors.fill: parent
             title: "Controls"
-			ColumnLayout {
+            ColumnLayout {
                 anchors.fill: parent
                 id: columnlayout1
+                //spacing: 10
 				Button {
                     id: compileBtn
-                    anchors.left: parent.left
-                    anchors.top: parent.top
+                    //anchors.left: parent.left
+                    //anchors.top: parent.top
 					text: "Compile Shader"
 					onClicked: {
 						console.log("recompiling shader");
@@ -109,8 +111,8 @@ Rectangle {
 				}
 				Button {
                     id: toggleUiBtn
-                    anchors.left: parent.left
-                    anchors.top: compileBtn.bottom
+                    //anchors.left: parent.left
+                    //anchors.top: compileBtn.bottom
 					text: "Toggle ui"
 					onClicked: {
 						console.log("toggle ui");
@@ -121,7 +123,7 @@ Rectangle {
                     id: cameraModeGroupBox
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.top: toggleUiBtn.bottom
+                    //anchors.top: toggleUiBtn.bottom
                     title: "Camera Mode"
                     ExclusiveGroup { id: cameraMode }
                     ColumnLayout {
@@ -154,7 +156,7 @@ Rectangle {
                 CheckBox {
                     id: rotationCb
                     anchors.left: parent.left
-                    anchors.top: cameraModeGroupBox.bottom
+                    //anchors.top: cameraModeGroupBox.bottom
                     text: "Rotate"
                     onCheckedChanged: {
                         console.log("rotation: "+checked);
@@ -168,7 +170,7 @@ Rectangle {
                     id: cullModeGroupBox
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.top: rotationCb.bottom
+                    // anchors.top: rotationCb.bottom
                     title: "Camera Mode"
                     ExclusiveGroup { id: cullMode }
                     ColumnLayout {
@@ -221,8 +223,8 @@ Rectangle {
                 }
                 ComboBox {
                     id: shaderSelectionComboBox
-                    anchors.left: parent.left
-                    anchors.top: cullModeGroupBox.bottom
+                    //anchors.left: parent.left
+                    //anchors.top: cullModeGroupBox.bottom
                     model: shaderListModel
                     onCurrentIndexChanged: {
                         console.log(shaderListModel.get(currentIndex).text);
@@ -232,11 +234,19 @@ Rectangle {
 
                 Component {
                     id: shaderUniformDelegate
-                    Row {
-                        Column {
-                            Label {
-                                id: labeledUniformLabel
-                                text: name + ": " + labeledUniformSlider.value
+                    RowLayout {
+                        ColumnLayout {
+                            RowLayout {
+                                spacing: 5
+                                Label {
+                                    id: labeledUniformLabel
+                                    text: name + ": " + labeledUniformSlider.value.toFixed(2) + (isVector?", " + labeledUniformSlider2.value.toFixed(2) + ", " + labeledUniformSlider3.value.toFixed(2) :"")
+                                }
+                                CheckBox {
+                                    id: linkedCb
+                                    text: "fix"
+                                    visible: isVector
+                                }
                             }
                             Slider {
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -251,7 +261,10 @@ Rectangle {
                                         application.setShaderUniformValue3f(uniformName, value, labeledUniformSlider2.value, labeledUniformSlider3.value);
                                     else
                                         application.setShaderUniformValue1f(uniformName, value);
-
+                                    if(linkedCb.checked) {
+                                        labeledUniformSlider2.value = value;
+                                        labeledUniformSlider3.value = value;
+                                    }
                                 }
                             }
                             Slider {
@@ -268,6 +281,10 @@ Rectangle {
                                         application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
                                     else
                                         application.setShaderUniformValue1f(uniformName, value);
+                                    if(linkedCb.checked) {
+                                        labeledUniformSlider.value = value;
+                                        labeledUniformSlider3.value = value;
+                                    }
 
                                 }
                             }
@@ -285,22 +302,26 @@ Rectangle {
                                         application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
                                     else
                                         application.setShaderUniformValue1f(uniformName, value);
-
+                                    if(linkedCb.checked) {
+                                        labeledUniformSlider.value = value;
+                                        labeledUniformSlider2.value = value;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                Row {
-                    anchors.top: shaderSelectionComboBox.bottom
-                    anchors.bottom: parent.bottom
-                    ListView {
+                //Row {
+                    //anchors.top: shaderSelectionComboBox.bottom
+                    //anchors.bottom: parent.bottom
+                    Repeater {
                         model: phongUniformsListModel
                         delegate: shaderUniformDelegate
-                        anchors.fill: parent
+                        //anchors.fill: parent
+                        //spacing: 10
                     }
-                }
-			}
+                //}
+            }
 		}
 	}
 }

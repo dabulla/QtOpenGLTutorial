@@ -167,7 +167,12 @@ void Window::keyPressEvent( QKeyEvent* e )
         case Qt::Key_PageDown:
             scene->setVerticalSpeed( -speed );
             break;
-
+			
+        case Qt::Key_R:
+			rootObject()->deleteLater();
+			setSource(QUrl());
+			loadUi();
+            break;
         default:
             WINDOW_BASE::keyPressEvent( e );
     }
