@@ -10,6 +10,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QMatrix4x4>
 #include <QStringList>
+#include <qhash.h>
 
 #include <QOpenGLFunctions_4_2_Core>
 
@@ -47,35 +48,26 @@ public:
     void setForwardSpeed( float vz ) { m_v.setZ( vz ); }
     void setViewCenterFixed( bool b ) { m_viewCenterFixed = b; }
 
-    // Camera orientation control
-    void pan( float angle ) { m_panAngle = angle; }
-    void tilt( float angle ) { m_tiltAngle = angle; }
-
-    enum DisplayMode {
-        SimpleWireFrame = 0,
-        WorldHeight,
-        WorldNormals,
-        Grass,
-        GrassAndRocks,
-        GrassRocksAndSnow,
-        LightingFactors,
-        TexturedAndLit,
-        DisplayModeCount
-    };
 
 	enum CameraMode {
 		CAMERMODE_WALKTHROUGH,
 		CAMERMODE_OBJECTINSPECTION
 	};
 
-    void setDisplayMode( DisplayMode displayMode ) { m_displayMode = displayMode; }
-    DisplayMode displayMode() const { return m_displayMode; }
+    // Translate relative to camera orientation axes
+    void translate( const QVector3D& vLocal);
+
+    // Camera orientation control
+    void pan( const float &angle );
+    void tilt( const float &angle );
 
 	void recompileShader();
 
-	unsigned int m_glCullMode;
+	void setGlCullMode(int cullMode) { m_glCullMode = cullMode; }
+	void setRotationSpeed(float rot) { m_rotationSpeed = rot; }
+
 public slots:
-	virtual void setActiveShader(const ShaderInfo &shader);
+	void setActiveShader(const ShaderInfo &shader);
 
 private:
     void prepareShaders();
@@ -84,10 +76,28 @@ private:
 
 	void genNormalsGPU();
 
+	unsigned int m_glCullMode;
+	unsigned int m_rotationSpeed;
+
+	QHash<QString, float> m_initialUniforms1f;
+	QHash<QString, int> m_initialUniforms1i;
+	QHash<QString, QVector3D> m_initialUniforms3f;
+
+	////Vectors and Matrices, Transformation related////
+    QVector3D m_position;
+    QVector3D m_upVector;
+    QVector3D m_viewCenter;
+
+    QVector3D m_cameraToCenter; // The vector from the camera position to the view center
+
+    QMatrix4x4 m_viewMatrix;
+    QMatrix4x4 m_projectionMatrix;
+    QMatrix4x4 m_viewProjectionMatrix;
+
 	bool m_isInitialized;
 	ShaderInfo m_shaderInfo;
 	QOpenGLDebugLogger m_logger;
-    Camera* m_camera;
+
     QVector3D m_v;
     bool m_viewCenterFixed;
     float m_panAngle;
@@ -119,7 +129,6 @@ private:
     float m_time;
     const float m_metersToUnits;
 
-    DisplayMode m_displayMode;
     QStringList m_displayModeNames;
     QVector<GLuint> m_displayModeSubroutines;
 

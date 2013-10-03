@@ -20,7 +20,7 @@ Rectangle {
             isVector: true
             defaultValue: 0.5
             minValue: 0
-            maxValue: 10
+            maxValue: 3
             step: 0.1
         }
         ListElement {
@@ -29,7 +29,7 @@ Rectangle {
             isVector: true
             defaultValue: 0.2
             minValue: 0
-            maxValue: 10
+            maxValue: 3
             step: 0.1
         }
         ListElement {
@@ -93,13 +93,13 @@ Rectangle {
 //            anchors.bottom: parent.bottom
 //            anchors.top: parent.top
             anchors.fill: parent
-			title: "controls"
+            title: "Controls"
 			ColumnLayout {
                 anchors.fill: parent
                 id: columnlayout1
 				Button {
                     id: compileBtn
-					anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: parent.left
                     anchors.top: parent.top
 					text: "Compile Shader"
 					onClicked: {
@@ -109,7 +109,7 @@ Rectangle {
 				}
 				Button {
                     id: toggleUiBtn
-					anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: parent.left
                     anchors.top: compileBtn.bottom
 					text: "Toggle ui"
 					onClicked: {
@@ -119,7 +119,8 @@ Rectangle {
 				}
                 GroupBox {
                     id: cameraModeGroupBox
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.top: toggleUiBtn.bottom
                     title: "Camera Mode"
                     ExclusiveGroup { id: cameraMode }
@@ -150,10 +151,24 @@ Rectangle {
                         }
                     }
                 }
+                CheckBox {
+                    id: rotationCb
+                    anchors.left: parent.left
+                    anchors.top: cameraModeGroupBox.bottom
+                    text: "Rotate"
+                    onCheckedChanged: {
+                        console.log("rotation: "+checked);
+                        if(checked)
+                            application.enableRotation();
+                        else
+                            application.disableRotation();
+                    }
+                }
                 GroupBox {
                     id: cullModeGroupBox
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: cameraModeGroupBox.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: rotationCb.bottom
                     title: "Camera Mode"
                     ExclusiveGroup { id: cullMode }
                     ColumnLayout {
@@ -206,7 +221,7 @@ Rectangle {
                 }
                 ComboBox {
                     id: shaderSelectionComboBox
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: parent.left
                     anchors.top: cullModeGroupBox.bottom
                     model: shaderListModel
                     onCurrentIndexChanged: {
@@ -214,63 +229,6 @@ Rectangle {
                         application.selectedShader = shaderListModel.get(currentIndex);
                     }
                 }
-/*				Label {
-					text: "Ka: " + materialKaSlider.value
-				}
-				Slider {
-					id: materialKaSlider
-					implicitWidth: 150
-					value: 0.1
-					maximumValue: 1
-					minimumValue: 0
-					stepSize: 0.1
-                    onValueChanged: application.setShaderUniformValue("material.Ka", value)
-				}
-				Label {
-					text: "Kd: " + materialKdSlider.value
-				}
-				Slider {
-					id: materialKdSlider
-					implicitWidth: 150
-					value: 0.5
-					maximumValue: 1
-					minimumValue: 0
-					stepSize: 0.1
-				}
-				Label {
-					text: "Ks: " + materialKsSlider.value
-				}
-				Slider {
-					id: materialKsSlider
-					implicitWidth: 150
-					value: 0.3
-					maximumValue: 1
-					minimumValue: 0
-					stepSize: 0.1
-				}
-				Label {
-					text: "Shininess: " + materialShininessSlider.value
-				}
-				Slider {
-					id: materialShininessSlider
-					implicitWidth: 150
-					value: 10.0
-					maximumValue: 100
-					minimumValue: 0
-					stepSize: 0.1
-				}
-				Label {
-					text: "Light: " + lightSlider.value + "°"
-				}
-				Slider {
-					id: lightSlider
-					implicitWidth: 150
-					value: 30.0
-					maximumValue: 180
-					minimumValue: 0
-					stepSize: 1
-				}
-*/
 
                 Component {
                     id: shaderUniformDelegate
@@ -290,7 +248,41 @@ Rectangle {
                                 stepSize: step
                                 onValueChanged: {
                                     if(isVector)
-                                        application.setShaderUniformValue3f(uniformName, value, value, value);
+                                        application.setShaderUniformValue3f(uniformName, value, labeledUniformSlider2.value, labeledUniformSlider3.value);
+                                    else
+                                        application.setShaderUniformValue1f(uniformName, value);
+
+                                }
+                            }
+                            Slider {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                id: labeledUniformSlider2
+                                visible: isVector
+                                implicitWidth: rootRectangle.width-10
+                                value: defaultValue
+                                maximumValue: maxValue
+                                minimumValue: minValue
+                                stepSize: step
+                                onValueChanged: {
+                                    if(isVector)
+                                        application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
+                                    else
+                                        application.setShaderUniformValue1f(uniformName, value);
+
+                                }
+                            }
+                            Slider {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                id: labeledUniformSlider3
+                                visible: isVector
+                                implicitWidth: rootRectangle.width-10
+                                value: defaultValue
+                                maximumValue: maxValue
+                                minimumValue: minValue
+                                stepSize: step
+                                onValueChanged: {
+                                    if(isVector)
+                                        application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
                                     else
                                         application.setShaderUniformValue1f(uniformName, value);
 
@@ -308,49 +300,6 @@ Rectangle {
                         anchors.fill: parent
                     }
                 }
-//                Component {
-//                    id: shaderUniformDelegate
-//                    Item {
-//                        width: 180
-//                        //height: labeledUniformSlider.height + labeledUniformLabel.height
-//                        height: 50
-//                        ColumnLayout {
-//                            height: 50
-//                            id: labeledUniformLayout
-//                            anchors.fill: parent
-//                            Label {
-//                                height: 50
-//                                id: labeledUniformLabel
-//                                text: name
-//                            }
-//                            Slider {
-//                                height: 50
-//                                id: labeledUniformSlider
-//                                implicitWidth: 150
-//                                value: defaultValue
-//                                maximumValue: maximumValue
-//                                minimumValue: minimumValue
-//                                stepSize: stepSize
-//                                onValueChanged: {
-//                                    application.setShaderUniformValue(uniformName, value);
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                ListView {
-//                    interactive: true
-//                    flickableDirection: Flickable.HorizontalFlick
-//                    transformOrigin: Item.Center
-//                    spacing: 0
-//                    orientation: ListView.Horizontal
-//                    boundsBehavior: Flickable.StopAtBounds
-//                    height: 500
-
-//                    model: phongUniformsListModel
-//                    delegate: shaderUniformDelegate
-//                    focus: true
-//                }
 			}
 		}
 	}

@@ -1,0 +1,184 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Generierte Dateien">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;moc;h;def;odl;idl;res;</Extensions>
+    </Filter>
+    <Filter Include="Generierte Dateien\Debug">
+      <UniqueIdentifier>{28e013ae-94e6-41a6-a20a-38770d1037c6}</UniqueIdentifier>
+      <Extensions>cpp;moc</Extensions>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="Generierte Dateien\Release">
+      <UniqueIdentifier>{9a5eae38-f9c1-4d9f-b699-9b1e02a507cc}</UniqueIdentifier>
+      <Extensions>cpp;moc</Extensions>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="Header Dateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Dateien">
+      <UniqueIdentifier>{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}</UniqueIdentifier>
+      <Extensions>qrc;*</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
+    <Filter Include="Source Dateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Dateien\libobj">
+      <UniqueIdentifier>{57f07313-503b-4f74-9578-f74080fce534}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Dateien\libobj">
+      <UniqueIdentifier>{e90dce75-cff6-4975-886e-062304d65122}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="common\abstractscene.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="common\camera.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="common\material.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="common\sampler.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="common\texture.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="window.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_abstractscene.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_abstractscene.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_camera.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_camera.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_window.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_window.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="mediator.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_mediator.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_mediator.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_shadertestscene.cpp">
+      <Filter>Generierte Dateien\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_shadertestscene.cpp">
+      <Filter>Generierte Dateien\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="shadertestscene.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="obj-0.1\obj\obj.cpp">
+      <Filter>Source Dateien\libobj</Filter>
+    </ClCompile>
+    <ClCompile Include="obj-0.1\obj\obj_parser.cpp">
+      <Filter>Source Dateien\libobj</Filter>
+    </ClCompile>
+    <ClCompile Include="LoaderObjFast.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="common\abstractscene.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <CustomBuild Include="common\camera.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <ClInclude Include="common\camera_p.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="common\material.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="common\sampler.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="common\texture.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+    <CustomBuild Include="window.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <CustomBuild Include="mediator.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shadertestscene.h">
+      <Filter>Header Dateien</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LoaderObj.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="obj-0.1\obj\config.hpp">
+      <Filter>Header Dateien\libobj</Filter>
+    </ClInclude>
+    <ClInclude Include="obj-0.1\obj\obj.hpp">
+      <Filter>Header Dateien\libobj</Filter>
+    </ClInclude>
+    <ClInclude Include="obj-0.1\obj\obj_parser.hpp">
+      <Filter>Header Dateien\libobj</Filter>
+    </ClInclude>
+    <ClInclude Include="obj-0.1\obj.hpp">
+      <Filter>Header Dateien\libobj</Filter>
+    </ClInclude>
+    <ClInclude Include="LoaderObjFast.h">
+      <Filter>Header Dateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\shaders\inline.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\inline.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.frag">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.tcs">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.tes">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phong.vert">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phongcomputenormals.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="resources\shaders\phongcomputenormalsflat.geom">
+      <Filter>Resource Dateien</Filter>
+    </None>
+    <None Include="ui\overlay.qml">
+      <Filter>Resource Dateien</Filter>
+    </None>
+  </ItemGroup>
+</Project>

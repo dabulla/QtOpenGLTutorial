@@ -27,6 +27,9 @@ public:
     Q_INVOKABLE void reloadShader();
     Q_INVOKABLE void toggleDialog();
 
+    Q_INVOKABLE void enableRotation();
+    Q_INVOKABLE void disableRotation();
+
     Q_INVOKABLE void setCamerModeWalkthrough();
     Q_INVOKABLE void setCamerModeObjectInspection();
 

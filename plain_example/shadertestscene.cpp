@@ -21,7 +21,6 @@ const float degToRad = float( M_PI / 180.0 );
 
 ShaderTestScene::ShaderTestScene( QObject* parent )
     : AbstractScene( parent ),
-      m_camera( new Camera( this ) ),
       m_v(),
       m_viewCenterFixed( false ),
       m_panAngle( 0.0f ),
@@ -33,27 +32,17 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_modelMatrix(),
       m_time( 0.0f ),
       m_metersToUnits( 0.05f ), // 500 units == 10 km => 0.05 units/m
-      m_displayMode( SimpleWireFrame ),
-      m_displayModeSubroutines( DisplayModeCount ),
       m_funcs( 0 ),
 	  m_material( 0 ),
 	  m_isInitialized(false),
 	  m_cameraMode(CameraMode::CAMERMODE_WALKTHROUGH),
-	  m_glCullMode(GL_BACK)
+	  m_glCullMode(GL_BACK),
+	  m_rotationSpeed(0.0f),
+	  m_position( -1.3f, 1.5f, 2.0f ),
+	  m_viewCenter( 0.0f, 1.1f, 0.0f ),
+	  m_upVector(0.0f, 1.0f, 0.0f ),
+	  m_cameraToCenter(m_viewCenter-m_position)
 {
-    // Initialize the camera position and orientation
-    m_camera->setPosition( QVector3D( -1.3f, 1.5f, 2.0f ) );
-    m_camera->setViewCenter( QVector3D( 0.0f, 1.1f, 0.0f ) );
-    m_camera->setUpVector( QVector3D( 0.0f, 1.0f, 0.0f ) );
-
-    //m_displayModeNames << QStringLiteral( "shaderSimpleWireFrame" )
-    //                   << QStringLiteral( "shadeWorldHeight" )
-    //                   << QStringLiteral( "shadeWorldNormal")
-    //                   << QStringLiteral( "shadeGrass" )
-    //                   << QStringLiteral( "shadeGrassAndRocks" )
-    //                   << QStringLiteral( "shadeGrassRocksAndSnow" )
-    //                   << QStringLiteral( "shadeLightingFactors" )
-    //                   << QStringLiteral( "shadeTexturedAndLit" );
 }
 
 void ShaderTestScene::onMessageLogged( QOpenGLDebugMessage message )
@@ -104,50 +93,66 @@ void ShaderTestScene::initialise()
     //                                       GL_FRAGMENT_SHADER,
     //                                       m_displayModeNames.at( i ).toLatin1() );
     //}
+	
+    m_modelMatrix.setToIdentity();
+	//m_modelMatrix.scale(0.05f); // Crytek sponza
+	m_modelMatrix.scale(10.f); // bunny
+
 	m_isInitialized = true;
+	//Set ShaderUniforms that the Ui wanted to set during initialisation
+	QHashIterator<QString, float> iter1f(m_initialUniforms1f);
+	while (iter1f.hasNext()) {
+		iter1f.next();
+		setShaderUniformValue(iter1f.key().toStdString().c_str(), iter1f.value());
+	}
+	QHashIterator<QString, int> iter1i(m_initialUniforms1i);
+	while (iter1i.hasNext()) {
+		iter1i.next();
+		setShaderUniformValue(iter1i.key().toStdString().c_str(), iter1i.value());
+	}
+	QHashIterator<QString, QVector3D> iter3f(m_initialUniforms3f);
+	while (iter3f.hasNext()) {
+		iter3f.next();
+		setShaderUniformValue(iter3f.key().toStdString().c_str(), iter3f.value().x(), iter3f.value().y(), iter3f.value().z());
+	}
 }
 
 void ShaderTestScene::update( float t )
 {
-    m_modelMatrix.setToIdentity();
-	//m_modelMatrix.scale(0.05f); // Crytek sponza
-	m_modelMatrix.scale(10.f); // bunny
-	m_modelMatrix.rotate(10.1f*t, 0.f, 1.f, 0.0f);
 
     // Store the time
     const float dt = t - m_time;
     m_time = t;
+	
+	m_modelMatrix.rotate(m_rotationSpeed*dt, 0.f, 1.f, 0.0f);
 
 	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
 	{
 		// Update the camera position and orientation
-		Camera::CameraTranslationOption option = m_viewCenterFixed
-											   ? Camera::DontTranslateViewCenter
-											   : Camera::TranslateViewCenter;
-		m_camera->translate( m_v * dt * m_metersToUnits, option );
+		translate( m_v * dt * m_metersToUnits );
 
 		if ( !qFuzzyIsNull( m_panAngle ) )
 		{
-			m_camera->pan( m_panAngle, QVector3D( 0.0f, 1.0f, 0.0f ) );
+			pan( m_panAngle );
 			m_panAngle = 0.0f;
 		}
 
 		if ( !qFuzzyIsNull( m_tiltAngle ) )
 		{
-			m_camera->tilt( m_tiltAngle );
+			tilt( m_tiltAngle );
 			m_tiltAngle = 0.0f;
 		}
 	} else {
 
 		if ( !qFuzzyIsNull( m_panAngle ) )
 		{
-			m_camera->pan( m_panAngle, QVector3D( 0.0f, 1.0f, 0.0f ) );
+			pan( m_panAngle );
 			m_panAngle = 0.0f;
 		}
 
 		if ( !qFuzzyIsNull( m_tiltAngle ) )
 		{
-			m_camera->tilt( m_tiltAngle );
+			tilt( m_tiltAngle );
 			m_tiltAngle = 0.0f;
 		}
 	}
@@ -178,11 +183,12 @@ void ShaderTestScene::render()
     ////                                  &m_displayModeSubroutines[m_displayMode] );
 
     // Pass in the usual transformation matrices
-    QMatrix4x4 viewMatrix = m_camera->viewMatrix();
-    QMatrix4x4 modelViewMatrix = viewMatrix * m_modelMatrix;
+    m_viewMatrix.setToIdentity();
+    m_viewMatrix.lookAt( m_position, m_viewCenter, m_upVector );
+    QMatrix4x4 modelViewMatrix = m_viewMatrix * m_modelMatrix;
     QMatrix3x3 worldNormalMatrix = m_modelMatrix.normalMatrix();
     QMatrix3x3 normalMatrix = modelViewMatrix.normalMatrix();
-    QMatrix4x4 mvp = m_camera->projectionMatrix() * modelViewMatrix;
+    QMatrix4x4 mvp = m_projectionMatrix * modelViewMatrix;
     shader->setUniformValue( "ModelMatrix", m_modelMatrix );
     shader->setUniformValue( "ModelViewMatrix", modelViewMatrix );
     shader->setUniformValue( "ModelNormalMatrix", worldNormalMatrix );
@@ -203,8 +209,10 @@ void ShaderTestScene::render()
     //shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
     //shader->setUniformValue( "material.shininess", matShininess );
 
+	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
+	// This let's us express bind/release calls with braces, as they define the scope of the Binder object.
+	// Not all classes have binder defined.
 	m_material->bind();
-	//TODO: Klammer erläutern
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
 		m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
@@ -222,9 +230,14 @@ void ShaderTestScene::resize( int w, int h )
     m_viewportSize = QVector2D( float( w ), float( h ) );
 
     // Update the projection matrix
-    float aspect = static_cast<float>( w ) / static_cast<float>( h );
-    m_camera->setPerspectiveProjection( 55.0f, aspect, 0.2f, 2048.0f );
+	float fieldOfView = 55.0f;
+	float aspectRatio = static_cast<float>( w ) / static_cast<float>( h );
+	float nearPlane = 0.2f;
+	float farPlane = 1024.0f;
+	m_projectionMatrix.setToIdentity();
+    m_projectionMatrix.perspective( fieldOfView, aspectRatio, nearPlane, farPlane );
 
+	//TODO: remove in simplke example?!
     // Update the viewport matrix
     float w2 = w / 2.0f;
     float h2 = h / 2.0f;
@@ -242,6 +255,47 @@ void ShaderTestScene::resize( int w, int h )
     // The geometry shader also needs the viewport matrix
     shader->setUniformValue( "viewportMatrix", m_viewportMatrix );
 	shader->release();
+}
+
+void ShaderTestScene::translate( const QVector3D& vLocal)
+{
+	if(vLocal.x() > 0.0f)
+		qDebug() << "TATATATAT" << vLocal;
+	QVector3D vWorld;
+	QVector3D x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
+    vWorld += vLocal.x() * x;
+    vWorld += vLocal.y() * m_upVector;
+    vWorld += vLocal.z() * m_cameraToCenter.normalized();
+    // Update the camera position using the calculated world vector
+    m_position += vWorld;
+    // Also update the view center coordinates
+    m_viewCenter += vWorld;
+    //m_cameraToCenter = m_viewCenter - m_position;
+    // Calculate a new up vector. We do this by:
+    // 1) Calculate a new local x-direction vector from the cross product of the new
+    //    camera to view center vector and the old up vector.
+    // 2) The local x vector is the normal to the plane in which the new up vector
+    //    must lay. So we can take the cross product of this normal and the new
+    //    x vector. The new normal vector forms the last part of the orthonormal basis
+    //x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
+    //m_upVector = QVector3D::crossProduct( x, m_cameraToCenter ).normalized();
+}
+
+void ShaderTestScene::pan( const float &angle )
+{
+	QQuaternion q = QQuaternion::fromAxisAndAngle( QVector3D(0.0f,1.0f,0.0f), -angle );
+    m_upVector = q.rotatedVector( m_upVector );
+    m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
+    m_viewCenter = m_position + m_cameraToCenter;
+}
+
+void ShaderTestScene::tilt( const float &angle )
+{
+	QVector3D xBasis = QVector3D::crossProduct( m_upVector, m_cameraToCenter.normalized() ).normalized();
+    QQuaternion q = QQuaternion::fromAxisAndAngle( xBasis, angle );
+    m_upVector = q.rotatedVector( m_upVector );
+    m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
+    m_viewCenter = m_position + m_cameraToCenter;
 }
 
 void ShaderTestScene::recompileShader()
@@ -396,6 +450,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 {
 	if(!m_isInitialized)
 	{
+		m_initialUniforms1f[QString(name)] = val;
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": " << val;
@@ -407,7 +462,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 	{
 		QVector4D worldLightDirection( sinf( val * degToRad )*50.f, cosf( val * degToRad )*50.f, 0.0f, 0.0f );
 		//QMatrix4x4 worldToEyeNormal( (m_camera->viewMatrix() * m_modelMatrix).normalMatrix() );
-		QVector4D lightDirection = (m_camera->viewMatrix() * m_modelMatrix) * worldLightDirection;
+		QVector4D lightDirection = (m_viewMatrix * m_modelMatrix) * worldLightDirection;
 		shader->setUniformValue( "light.position", lightDirection );
 	} else {
 		shader->setUniformValue( name, val );
@@ -419,6 +474,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 {
 	if(!m_isInitialized)
 	{
+		m_initialUniforms1i[QString(name)] = val;
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": " << val;
@@ -432,6 +488,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, co
 {
 	if(!m_isInitialized)
 	{
+		m_initialUniforms3f[QString(name)] = QVector3D(x,y,z);
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": (" << x << ", " << y << ", " << z << ")";

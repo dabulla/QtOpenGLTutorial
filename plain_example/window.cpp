@@ -168,38 +168,6 @@ void Window::keyPressEvent( QKeyEvent* e )
             scene->setVerticalSpeed( -speed );
             break;
 
-        case Qt::Key_F1:
-            scene->setDisplayMode( ShaderTestScene::TexturedAndLit );
-            break;
-
-        case Qt::Key_F2:
-            scene->setDisplayMode( ShaderTestScene::SimpleWireFrame );
-            break;
-
-        case Qt::Key_F3:
-            scene->setDisplayMode( ShaderTestScene::WorldHeight );
-            break;
-
-        case Qt::Key_F4:
-            scene->setDisplayMode( ShaderTestScene::WorldNormals );
-            break;
-
-        case Qt::Key_F5:
-            scene->setDisplayMode( ShaderTestScene::Grass );
-            break;
-
-        case Qt::Key_F6:
-            scene->setDisplayMode( ShaderTestScene::GrassAndRocks );
-            break;
-
-        case Qt::Key_F7:
-            scene->setDisplayMode( ShaderTestScene::GrassRocksAndSnow );
-            break;
-
-        case Qt::Key_F8:
-            scene->setDisplayMode( ShaderTestScene::LightingFactors );
-            break;
-
         default:
             WINDOW_BASE::keyPressEvent( e );
     }
@@ -258,7 +226,7 @@ void Window::mouseMoveEvent( QMouseEvent* e )
     {
         m_pos = e->pos();
         float dx = 0.2f * ( m_pos.x() - m_prevPos.x() );
-        float dy = -0.2f * ( m_pos.y() - m_prevPos.y() );
+        float dy = 0.2f * ( m_pos.y() - m_prevPos.y() );
         m_prevPos = m_pos;
 
         ShaderTestScene* scene = static_cast<ShaderTestScene*>( m_scene );

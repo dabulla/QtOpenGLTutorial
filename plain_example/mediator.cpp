@@ -78,20 +78,30 @@ Q_INVOKABLE void Mediator::setCamerModeObjectInspection()
 }
 Q_INVOKABLE void Mediator::setCullmodeBack()
 {
-	m_scene->m_glCullMode = GL_BACK;
+	m_scene->setGlCullMode(GL_BACK);
 }
 
 Q_INVOKABLE void Mediator::setCullmodeFront()
 {
-	m_scene->m_glCullMode = GL_FRONT;
+	m_scene->setGlCullMode(GL_FRONT);
 }
 
 Q_INVOKABLE void Mediator::setCullmodeBoth()
 {
-	m_scene->m_glCullMode = GL_FRONT_AND_BACK;
+	m_scene->setGlCullMode(GL_FRONT_AND_BACK);
 }
 
 Q_INVOKABLE void Mediator::setCullmodeNone()
 {
-	m_scene->m_glCullMode = GL_NONE;
+	m_scene->setGlCullMode(GL_NONE);
+}
+
+Q_INVOKABLE void Mediator::enableRotation()
+{
+	m_scene->setRotationSpeed(10.1f);
+}
+
+Q_INVOKABLE void Mediator::disableRotation()
+{
+	m_scene->setRotationSpeed(0.0f);
 }
