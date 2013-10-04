@@ -4,11 +4,16 @@
 layout(location=0) in vec3 in_Position;
 layout(location=1) in vec3 in_Normal;
 
+subroutine vec4 ShaderModelType();
+subroutine uniform ShaderModelType shaderModel;
+
 out Vertex {
+    noperspective vec3 edgeDistance;
     vec4 worldPosition;
     vec3 worldNormal;
     vec4 position;
     vec3 normal;
+	float alpha;
 } output;
 
 uniform	mat3x3 NormalMatrix;
@@ -17,12 +22,17 @@ uniform	mat4x4 ModelMatrix;
 uniform	mat4x4 ModelViewMatrix;
 uniform	mat4x4 ModelViewProjectionMatrix;
 
-void main() {
+subroutine( ShaderModelType )
+vec4 plain() {
 	vec4 pos = vec4(in_Position, 1.0f);
 	output.worldPosition = ModelMatrix*pos;
 	output.worldNormal = ModelNormalMatrix*in_Normal;
 	output.position = ModelViewMatrix*pos;
 	output.normal = NormalMatrix*in_Normal;
 
-	gl_Position = ModelViewProjectionMatrix*pos;
+	return ModelViewProjectionMatrix*pos;
+}
+
+void main() {
+	gl_Position = shaderModel();
 }

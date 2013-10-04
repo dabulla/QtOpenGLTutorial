@@ -79,8 +79,9 @@ QSurfaceFormat Window::getFormat()
 	// Qt makes certain OpenGL-Calls that nsight does not like. Even if the UI is completely disabled, nsight does not work yet.
 	format.setProfile( QSurfaceFormat::CompatibilityProfile );
 	
-	if(DEBUG_OPENGL_ENABLED)
+#ifdef DEBUG_OPENGL_ENABLED
 		format.setOption( QSurfaceFormat::DebugContext );
+#endif
 
 	return format;
 }

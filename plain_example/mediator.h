@@ -4,7 +4,7 @@
 #include <QObject>
 #include <qquickview.h>
 #include <qvariant.h>
-#include "abstractscene.h"
+#include "shadertestscene.h"
 
 class ShaderTestScene;
 class Window;
@@ -49,6 +49,12 @@ public:
 		ShaderInfo shaderInfo;
 		shaderInfo.vertexShaderFile = shader.value<QObject*>()->property("vertexShaderFile").toString();
 		shaderInfo.vertexShaderProc = shader.value<QObject*>()->property("vertexShaderProc").toString();
+		shaderInfo.tesselationControlShaderFile = shader.value<QObject*>()->property("tesselationControlShaderFile").toString();
+		shaderInfo.tesselationControlShaderProc = shader.value<QObject*>()->property("tesselationControlShaderProc").toString();
+		shaderInfo.tesselationEvaluationShaderFile = shader.value<QObject*>()->property("tesselationEvaluationShaderFile").toString();
+		shaderInfo.tesselationEvaluationShaderProc = shader.value<QObject*>()->property("tesselationEvaluationShaderProc").toString();
+		shaderInfo.geometryShaderFile = shader.value<QObject*>()->property("geometryShaderFile").toString();
+		shaderInfo.geometryShaderProc = shader.value<QObject*>()->property("geometryShaderProc").toString();
 		shaderInfo.fragmentShaderFile = shader.value<QObject*>()->property("fragmentShaderFile").toString();
 		shaderInfo.fragmentShaderProc = shader.value<QObject*>()->property("fragmentShaderProc").toString();
         emit selectedShaderChanged(shaderInfo);

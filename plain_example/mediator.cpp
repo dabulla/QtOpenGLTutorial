@@ -30,16 +30,17 @@ Q_INVOKABLE void Mediator::reloadShader()
 
 Q_INVOKABLE void Mediator::toggleDialog()
 {
+	//m_mainWnd->rootObject()->setVisible(false);
 	if(	m_uiWnd == 0)
 	{
-		m_uiWnd = new QQuickView(m_mainWnd);
+		m_uiWnd = new QQuickView();//m_mainWnd);
 		m_uiWnd->setSource(m_mainWnd->m_sourcePath);
 		m_uiWnd->setResizeMode(QQuickView::SizeRootObjectToView);
 		m_uiWnd->setWidth(200);
 		m_uiWnd->setHeight(500);
 		m_uiWnd->setSurfaceType( QSurface::OpenGLSurface );
 		m_uiWnd->rootContext()->setContextProperty("application", this);
-		m_uiWnd->setFlags(Qt::Popup | Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
+		//m_uiWnd->setFlags(Qt::Popup | Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
 		m_uiWnd->create();
 		m_uiWnd->show();
 		m_mainWnd->rootObject()->setOpacity(0);

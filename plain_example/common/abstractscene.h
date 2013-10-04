@@ -6,19 +6,6 @@
 class QOpenGLContext;
 class QQuickItem;
 
-//ShaderInfo: Contains Info about the ShaderProcedure that can be used.
-// Two files can be specified the add a fragment and vertex shader.
-// moreover a subroutine can be specified. This way different shaders can be defined in one file.
-// This has the advantage, that common function in the file can be reused: e.g. phong(...) can be used for
-// a plain phong shader and a textured phong shader
-struct ShaderInfo
-{
-	QString vertexShaderFile;
-	QString vertexShaderProc;
-	QString fragmentShaderFile;
-	QString fragmentShaderProc;
-};
-
 class AbstractScene : public QObject
 {
     Q_OBJECT
@@ -62,8 +49,6 @@ public:
 	//virtual void setCamerModeWalkthrough() = 0;
 	//virtual void setCamerModeObjectInspection() = 0;
 
-public slots:
-	virtual void setActiveShader(const ShaderInfo &) = 0;
 protected:
     QOpenGLContext* m_context;
 };

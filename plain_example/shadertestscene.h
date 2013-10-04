@@ -15,13 +15,31 @@
 #include <QOpenGLFunctions_4_2_Core>
 
 // Enabling Qt debug features will prevent nvidia nsight debugging tool from working. This is likely to be fixed in the future
-#define DEBUG_OPENGL_ENABLED 1
+#define DEBUG_OPENGL_ENABLED
 
 class Camera;
 class QQuickItem;
 
 class QOpenGLFunctions_4_2_Core;
 
+//ShaderInfo: Contains Info about the ShaderProcedure that can be used.
+// Two files can be specified the add a fragment and vertex shader.
+// moreover a subroutine can be specified. This way different shaders can be defined in one file.
+// This has the advantage, that common function in the file can be reused: e.g. phong(...) can be used for
+// a plain phong shader and a textured phong shader
+struct ShaderInfo
+{
+	QString vertexShaderFile;
+	QString vertexShaderProc;
+	QString tesselationControlShaderFile;
+	QString tesselationControlShaderProc;
+	QString tesselationEvaluationShaderFile;
+	QString tesselationEvaluationShaderProc;
+	QString geometryShaderFile;
+	QString geometryShaderProc;
+	QString fragmentShaderFile;
+	QString fragmentShaderProc;
+};
 
 class ShaderTestScene : public AbstractScene
 {
@@ -73,6 +91,7 @@ private:
     void prepareShaders();
     void prepareTextures();
     void prepareVertexBuffers();
+	void passUniforms();
 
 	void genNormalsGPU();
 

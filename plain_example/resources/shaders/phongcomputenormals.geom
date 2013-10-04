@@ -4,10 +4,11 @@ layout( triangles_adjacency ) in;
 layout( triangle_strip, max_vertices = 3 ) out;
 
 in worldVertex {
+    noperspective vec3 edgeDistance;
     vec4 worldPosition;
-    //vec3 worldNormal;
-    vec4 position;
-    //vec3 normal;
+    vec3 worldNormal;
+	vec4 position;
+	vec3 normal;
 } In[];
 
 out Vertex {

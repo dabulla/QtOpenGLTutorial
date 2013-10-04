@@ -11,6 +11,7 @@
 #include <qslider.h>
 #include <qquickview.h>
 #include <qscopedpointer.h>
+#include <qvector.h>
 
 #include "LoaderObj.h"
 
@@ -51,17 +52,22 @@ void ShaderTestScene::onMessageLogged( QOpenGLDebugMessage message )
 }
 
 void ShaderTestScene::initialise()
-{	    
-	if(DEBUG_OPENGL_ENABLED)
-	{
-		connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
-				 this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
-				 Qt::DirectConnection );
-		if ( m_logger.initialize() ) {
-			m_logger.startLogging( QOpenGLDebugLogger::SynchronousLogging );
-			m_logger.enableMessages();
-		}
+{
+#ifdef DEBUG_OPENGL_ENABLED
+	connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
+				this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
+				Qt::DirectConnection );
+	if ( m_logger.initialize() ) {
+		m_logger.startLogging( QOpenGLDebugLogger::SynchronousLogging );
+		m_logger.enableMessages();
+		QVector<uint> disabledMessages;
+		disabledMessages.push_back(131185);
+		disabledMessages.push_back(131204);
+		disabledMessages.push_back(131218);
+		disabledMessages.push_back(131184);
+		m_logger.disableMessages(disabledMessages);
 	}
+#endif
     m_funcs = m_context->versionFunctions<QOpenGLFunctions_4_2_Core>();
     if ( !m_funcs )
     {
@@ -69,15 +75,19 @@ void ShaderTestScene::initialise()
         exit( 1 );
     }
     m_funcs->initializeOpenGLFunctions();
+	m_isInitialized = true;
     // Initialize resources
     recompileShader();
     prepareVertexBuffers();
 
+	// some constant uniforms are set once after initialisation
+	// for other uniforms, see passUniforms()
+
     // Set the wireframe line properties
     QOpenGLShaderProgramPtr shader = m_material->shader();
     shader->bind();
-    shader->setUniformValue( "line.width", 1.0f );
-    shader->setUniformValue( "line.color", QVector4D( 0.0f, 1.0f, 0.0f, 1.0f ) );
+	setShaderUniformValue("line.width", 1.0f);
+	setShaderUniformValue("line.color", 0.0f, 0.6f, 0.0f);
 
     // Set the fog parameters
     shader->setUniformValue( "fog.color", QVector4D( 0.65f, 0.77f, 1.0f, 1.0f ) );
@@ -85,36 +95,11 @@ void ShaderTestScene::initialise()
     shader->setUniformValue( "fog.maxDistance", 128.0f );
 	
     shader->release();
-    // Get subroutine indices
-    //for ( int i = 0; i < DisplayModeCount; ++i)
-    //{
-    //    m_displayModeSubroutines[i] =
-    //        m_funcs->glGetSubroutineIndex( shader->programId(),
-    //                                       GL_FRAGMENT_SHADER,
-    //                                       m_displayModeNames.at( i ).toLatin1() );
-    //}
 	
     m_modelMatrix.setToIdentity();
 	//m_modelMatrix.scale(0.05f); // Crytek sponza
 	m_modelMatrix.scale(10.f); // bunny
 
-	m_isInitialized = true;
-	//Set ShaderUniforms that the Ui wanted to set during initialisation
-	QHashIterator<QString, float> iter1f(m_initialUniforms1f);
-	while (iter1f.hasNext()) {
-		iter1f.next();
-		setShaderUniformValue(iter1f.key().toStdString().c_str(), iter1f.value());
-	}
-	QHashIterator<QString, int> iter1i(m_initialUniforms1i);
-	while (iter1i.hasNext()) {
-		iter1i.next();
-		setShaderUniformValue(iter1i.key().toStdString().c_str(), iter1i.value());
-	}
-	QHashIterator<QString, QVector3D> iter3f(m_initialUniforms3f);
-	while (iter3f.hasNext()) {
-		iter3f.next();
-		setShaderUniformValue(iter3f.key().toStdString().c_str(), iter3f.value().x(), iter3f.value().y(), iter3f.value().z());
-	}
 }
 
 void ShaderTestScene::update( float t )
@@ -161,26 +146,57 @@ void ShaderTestScene::update( float t )
 void ShaderTestScene::render()
 {
     m_funcs->glClearColor( 0.65f, 0.77f, 1.0f, 1.0f );
-    m_funcs->glClear( GL_COLOR_BUFFER_BIT );
+	m_funcs->glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	
     // Enable depth testing
 	m_funcs->glDepthMask(GL_TRUE);
 	m_funcs->glEnable( GL_DEPTH_TEST );
 	m_funcs->glDepthFunc(GL_LESS);
-    m_funcs->glEnable( GL_CULL_FACE );
-	m_funcs->glCullFace(m_glCullMode); //TODO: Ausprobieren, Einstellbar machen
+	if(m_glCullMode == GL_NONE)
+	{
+		m_funcs->glDisable( GL_CULL_FACE );
+	} else {
+		m_funcs->glEnable( GL_CULL_FACE );
+		m_funcs->glCullFace(m_glCullMode);
+	}
 	m_funcs->glEnable(GL_BLEND);
+	m_funcs->glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Avoid flickering after Qt Ui updates. Qt updates only a portion of the screen.
 	//If we do not reset viewport size, our rendering will be of the size of the last gui-element qt drawed.
 	m_funcs->glViewport( 0, 0, m_viewportSize.x(), m_viewportSize.y() );
-    //m_material->bind();
+
+	//Bind and activate all Textures and Sampler
+    m_material->bind();
+
+	//Before setting uniforms, the shader must be bound.
+	//Note: m_material->bind(); already called shader->bind() do not forget to call shader->release()
+    //shader->bind();
+	passUniforms();
+
+	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
+	// This let's us express bind/release calls with braces, as they define the scope of the Binder object.
+	// Not all classes have binder defined.
+    {
+        QOpenGLVertexArrayObject::Binder binder( &m_vao );
+		
+		if(m_shaderInfo.tesselationControlShaderProc.isEmpty())
+		{
+			m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
+		} else {
+			m_material->shader()->setPatchVertexCount( 1 );
+			m_funcs->glDrawArrays( GL_PATCHES, 0, m_elementCount );
+		}
+    }
+	m_material->shader()->release();
+	//m_material->release();
+	m_funcs->glActiveTexture( GL_TEXTURE0 );
+}
+
+//Precondition: Shader must be bound (shader->bind())
+void ShaderTestScene::passUniforms()
+{
     QOpenGLShaderProgramPtr shader = m_material->shader();
-	
-    shader->bind();
-    //// Set the fragment shader display mode subroutine
-    ////m_funcs->glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1,
-    ////                                  &m_displayModeSubroutines[m_displayMode] );
 
     // Pass in the usual transformation matrices
     m_viewMatrix.setToIdentity();
@@ -195,31 +211,53 @@ void ShaderTestScene::render()
     shader->setUniformValue( "NormalMatrix", normalMatrix );
     shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
 
-	//m_qmlContext->findChild<QObject>(QString("materialKa")).property("value").toDouble();
-	//double matKa = m_rootObject->property("material_Ka").toDouble();
-	//double matKd = m_rootObject->property("material_Kd").toDouble();
-	//double matKs = m_rootObject->property("material_Ks").toDouble();
-	//float matShininess = m_rootObject->property("material_shininess").toDouble();
-    //shader->setUniformValue( "light.position", lightDirection );
+	// Set the active Shader subroutine
+	// Subroutines are functions in the shader. They can be set almost in the same way as other uniform values
+	// In contrast to other uniform types (e.g. "float"), the possible values of a subroutine variable are defined in the shader itself (e.g. "applyPhongLighting()", "applyFlatLighting()")
+	// Because of that we have to look-up the given name of a function and then set the function to a variable in the shader.
+	// Using this technique, multiple shader can be implemented in one file. Functions can be reused (eg. phong+texturing).
+		
+	// 1) Look up the subroutine-location for the name from "m_shaderInfo"
+	// 2) Set the first subroutine-variable in a shader to the found subroutine.
+	if(!m_shaderInfo.vertexShaderProc.isEmpty())
+	{
+		GLuint vertexShaderSubroutineLocation = m_funcs->glGetSubroutineIndex(shader->programId(), GL_VERTEX_SHADER,
+			m_shaderInfo.vertexShaderProc.toStdString().c_str());
+		m_funcs->glUniformSubroutinesuiv( GL_VERTEX_SHADER, 1,
+			&vertexShaderSubroutineLocation );
+	}
+	if(!m_shaderInfo.tesselationControlShaderProc.isEmpty())
+	{
+		GLuint tesselationControlShaderSubroutineLocation = m_funcs->glGetSubroutineIndex(shader->programId(), GL_TESS_CONTROL_SHADER,
+			m_shaderInfo.tesselationControlShaderProc.toStdString().c_str());
+		m_funcs->glUniformSubroutinesuiv( GL_TESS_CONTROL_SHADER, 1,
+			&tesselationControlShaderSubroutineLocation );
+	}
+	if(!m_shaderInfo.tesselationEvaluationShaderProc.isEmpty())
+	{
+		GLuint tesselationEvaluationShaderSubroutineLocation = m_funcs->glGetSubroutineIndex(shader->programId(), GL_TESS_EVALUATION_SHADER,
+			m_shaderInfo.tesselationEvaluationShaderProc.toStdString().c_str());
+		m_funcs->glUniformSubroutinesuiv( GL_TESS_EVALUATION_SHADER, 1,
+			&tesselationEvaluationShaderSubroutineLocation );
+	}
+	if(!m_shaderInfo.geometryShaderProc.isEmpty())
+	{
+		GLuint geometryShaderSubroutineLocation = m_funcs->glGetSubroutineIndex(shader->programId(), GL_GEOMETRY_SHADER,
+			m_shaderInfo.geometryShaderProc.toStdString().c_str());
+		m_funcs->glUniformSubroutinesuiv( GL_GEOMETRY_SHADER, 1,
+			&geometryShaderSubroutineLocation );
+	}
+	if(!m_shaderInfo.fragmentShaderProc.isEmpty())
+	{
+		GLuint fragmentShaderSubroutineLocation = m_funcs->glGetSubroutineIndex(shader->programId(), GL_FRAGMENT_SHADER,
+			m_shaderInfo.fragmentShaderProc.toStdString().c_str());
+		m_funcs->glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1,
+			&fragmentShaderSubroutineLocation );
+	}
+
+	//Note: other uniforms may have been set from the ui at this point.
+	//Other uniforms could be set here
     shader->setUniformValue( "light.intensity", QVector3D( 1.0f, 1.0f, 1.0f ) );
-
-    // Set the material properties
-    //shader->setUniformValue( "material.Ka", QVector3D( matKa, matKa, matKa ) );
-    //shader->setUniformValue( "material.Kd", QVector3D( matKd, matKd, matKd ) );
-    //shader->setUniformValue( "material.Ks", QVector3D( matKs, matKs, matKs ) );
-    //shader->setUniformValue( "material.shininess", matShininess );
-
-	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
-	// This let's us express bind/release calls with braces, as they define the scope of the Binder object.
-	// Not all classes have binder defined.
-	m_material->bind();
-    {
-        QOpenGLVertexArrayObject::Binder binder( &m_vao );
-		m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
-    }
-	shader->release();
-	//m_material->release();
-	m_funcs->glActiveTexture( GL_TEXTURE0 );
 }
 
 void ShaderTestScene::resize( int w, int h )
@@ -259,8 +297,6 @@ void ShaderTestScene::resize( int w, int h )
 
 void ShaderTestScene::translate( const QVector3D& vLocal)
 {
-	if(vLocal.x() > 0.0f)
-		qDebug() << "TATATATAT" << vLocal;
 	QVector3D vWorld;
 	QVector3D x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
     vWorld += vLocal.x() * x;
@@ -302,6 +338,8 @@ void ShaderTestScene::recompileShader()
 {
 	prepareShaders();
 	prepareTextures();
+	//TODO: resize is only needed for viewPortmatrix at the moment. TODO: Add unifomr functions for matrices...
+	resize();
 }
 
 void ShaderTestScene::prepareShaders()
@@ -317,34 +355,61 @@ void ShaderTestScene::prepareShaders()
 		m_material = new Material;
 		//m_material.reset(new Material);
 	}
-    //m_material->setShaders( ":/shaders/terraintessellation.vert",
-    //                        //":/shaders/terraintessellation.tcs",
-    //                        //":/shaders/terraintessellation.tes",
-    //                        //":/shaders/terraintessellation.geom",
-    //                        ":/shaders/terraintessellation.frag" );
-	//m_material->setShadersFromString( VertexShader, FragmentShader);
-	//m_material->setShaders( "resources/shaders/inline.vert", "resources/shaders/inline.frag");
-	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phong.frag");
-	//m_material->setShaders( "resources/shaders/phong.vert", "resources/shaders/phongcomputenormalsflat.geom", "resources/shaders/phong.frag");
-	m_material->setShaders( m_shaderInfo.vertexShaderFile, m_shaderInfo.fragmentShaderFile);
+	QString vertexShader;
+	QString tessControlShader;
+	QString tessEvalShader;
+	QString geometryShader;
+	QString fragmentShader;
+	if(m_shaderInfo.tesselationControlShaderFile.isEmpty())
+	{
+		if(m_shaderInfo.geometryShaderFile.isEmpty())
+		{
+			m_material->setShaders( m_shaderInfo.vertexShaderFile, m_shaderInfo.fragmentShaderFile);
+		}
+		else
+		{
+			m_material->setShaders( m_shaderInfo.vertexShaderFile, m_shaderInfo.geometryShaderFile, m_shaderInfo.fragmentShaderFile);
+		}
+	}
+	else
+	{
+		m_material->setShaders( m_shaderInfo.vertexShaderFile, m_shaderInfo.tesselationControlShaderFile, m_shaderInfo.tesselationEvaluationShaderFile, m_shaderInfo.geometryShaderFile, m_shaderInfo.fragmentShaderFile);
+	}
+
+	//Set ShaderUniforms that the Ui wanted to set during initialisation
+	QHashIterator<QString, float> iter1f(m_initialUniforms1f);
+	while (iter1f.hasNext()) {
+		iter1f.next();
+		setShaderUniformValue(iter1f.key().toStdString().c_str(), iter1f.value());
+	}
+	QHashIterator<QString, int> iter1i(m_initialUniforms1i);
+	while (iter1i.hasNext()) {
+		iter1i.next();
+		setShaderUniformValue(iter1i.key().toStdString().c_str(), iter1i.value());
+	}
+	QHashIterator<QString, QVector3D> iter3f(m_initialUniforms3f);
+	while (iter3f.hasNext()) {
+		iter3f.next();
+		setShaderUniformValue(iter3f.key().toStdString().c_str(), iter3f.value().x(), iter3f.value().y(), iter3f.value().z());
+	}
 }
 
 void ShaderTestScene::prepareTextures()
 {
-	SamplerPtr sampler( new Sampler );
-    sampler->create();
-    sampler->setMinificationFilter( GL_LINEAR );
-    sampler->setMagnificationFilter( GL_LINEAR );
-    sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
-    sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
+    //SamplerPtr sampler( new Sampler );
+    //sampler->create();
+    //sampler->setMinificationFilter( GL_LINEAR );
+    //sampler->setMagnificationFilter( GL_LINEAR );
+    //sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
+    //sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
 
-    QImage heightMapImage( "./resources/textures/grass.png" );
-    m_funcs->glActiveTexture( GL_TEXTURE0 );
-    TexturePtr heightMap( new Texture );
-    heightMap->create();
-    heightMap->bind();
-    heightMap->setImage( heightMapImage );
-    m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
+    //QImage heightMapImage( "./resources/textures/grass.png" );
+    //m_funcs->glActiveTexture( GL_TEXTURE0 );
+    //TexturePtr heightMap( new Texture );
+    //heightMap->create();
+    //heightMap->bind();
+    //heightMap->setImage( heightMapImage );
+    //m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
 
     SamplerPtr tilingSampler( new Sampler );
     tilingSampler->create();
@@ -355,7 +420,7 @@ void ShaderTestScene::prepareTextures()
     tilingSampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
 
     QImage grassImage( "./resources/textures/grass.png" );
-    m_funcs->glActiveTexture( GL_TEXTURE1 );
+    m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr grassTexture( new Texture );
     grassTexture->create();
     grassTexture->bind();
@@ -364,7 +429,7 @@ void ShaderTestScene::prepareTextures()
     m_material->setTextureUnitConfiguration( 1, grassTexture, tilingSampler, QByteArrayLiteral( "grassTexture" ) );
 
     QImage rockImage( "./resources/textures/rock.png" );
-    m_funcs->glActiveTexture( GL_TEXTURE2 );
+    m_funcs->glActiveTexture( GL_TEXTURE1 );
     TexturePtr rockTexture( new Texture );
     rockTexture->create();
     rockTexture->bind();
@@ -373,7 +438,7 @@ void ShaderTestScene::prepareTextures()
     m_material->setTextureUnitConfiguration( 2, rockTexture, tilingSampler, QByteArrayLiteral( "rockTexture" ) );
 
     QImage snowImage( "./resources/textures/snowrocks.png" );
-    m_funcs->glActiveTexture( GL_TEXTURE3 );
+    m_funcs->glActiveTexture( GL_TEXTURE2 );
     TexturePtr snowTexture( new Texture );
     snowTexture->create();
     snowTexture->bind();
@@ -448,9 +513,9 @@ void ShaderTestScene::prepareVertexBuffers()
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 {
+	m_initialUniforms1f[QString(name)] = val;
 	if(!m_isInitialized)
 	{
-		m_initialUniforms1f[QString(name)] = val;
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": " << val;
@@ -472,9 +537,9 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 {
+	m_initialUniforms1i[QString(name)] = val;
 	if(!m_isInitialized)
 	{
-		m_initialUniforms1i[QString(name)] = val;
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": " << val;
@@ -486,9 +551,9 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, const float &y, const float &z)
 {
+	m_initialUniforms3f[QString(name)] = QVector3D(x,y,z);
 	if(!m_isInitialized)
 	{
-		m_initialUniforms3f[QString(name)] = QVector3D(x,y,z);
 		return;
 	}
 	qDebug() << "Set Uniform \"" << name << "\": (" << x << ", " << y << ", " << z << ")";
@@ -500,10 +565,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, co
 
 void ShaderTestScene::setActiveShader(const ShaderInfo &shader)
 {
-	m_shaderInfo.fragmentShaderFile = shader.fragmentShaderFile;
-	m_shaderInfo.fragmentShaderProc = shader.fragmentShaderProc;
-	m_shaderInfo.vertexShaderFile = shader.vertexShaderFile;
-	m_shaderInfo.vertexShaderProc = shader.vertexShaderProc;
+	m_shaderInfo = shader;
 	if(m_isInitialized)
 	{
 		recompileShader();
