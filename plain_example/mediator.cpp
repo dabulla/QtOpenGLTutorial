@@ -68,6 +68,11 @@ Q_INVOKABLE void Mediator::setShaderUniformValue3f(const QString &name, const fl
 	m_scene->setShaderUniformValue(name.toStdString().c_str(), x, y, z);
 }
 
+Q_INVOKABLE void Mediator::setShaderUniformValue1b(const QString &name, const bool &val)
+{
+	m_scene->setShaderUniformValue(name.toStdString().c_str(), val);
+}
+
 Q_INVOKABLE void Mediator::setCamerModeWalkthrough()
 {
 	m_scene->setCamerModeWalkthrough();

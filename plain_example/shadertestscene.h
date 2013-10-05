@@ -53,9 +53,10 @@ public:
     virtual void render();
     virtual void resize( int w, int h );
 
-	virtual void setShaderUniformValue(const char *name,const float &val);
-	virtual void setShaderUniformValue(const char *name,const int &val);
-	virtual void setShaderUniformValue(const char *name,const float &x, const float &y, const float &z);
+	virtual void setShaderUniformValue(const char *name, const float &val);
+	virtual void setShaderUniformValue(const char *name, const int &val);
+	virtual void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z);
+	virtual void setShaderUniformValue(const char *name, const bool &val);
 	
 	virtual void setCamerModeWalkthrough() { m_cameraMode = CAMERMODE_WALKTHROUGH;}
 	virtual void setCamerModeObjectInspection() { m_cameraMode = CAMERMODE_OBJECTINSPECTION;}
@@ -101,6 +102,7 @@ private:
 	QHash<QString, float> m_initialUniforms1f;
 	QHash<QString, int> m_initialUniforms1i;
 	QHash<QString, QVector3D> m_initialUniforms3f;
+	QHash<QString, bool> m_initialUniforms1b;
 
 	////Vectors and Matrices, Transformation related////
     QVector3D m_position;

@@ -34,6 +34,9 @@ uniform struct LineInfo {
   vec3 color;
 } line;
 
+uniform bool doWireframe;
+uniform float wireframeAlpha;
+
 uniform float alpha;
 
 uniform sampler2D bunnyTex;
@@ -95,8 +98,8 @@ vec4 wireFrame()
         float x = d - ( line.width - 1.0 );
         mixVal = exp2( -2.0 * ( x * x ) );
     }
-    vec4 c = mix( vec4(1.0f, 1.0f, 1.0f, alpha), vec4(line.color, 1.0f), mixVal );
-    return c;//vec4(0.5f, mixVal, mixVal, 1.0f );//c;//vec4(1.0f, 0.0f, 0.0f, alpha);
+    vec4 c = mix( vec4(0.0f, 0.0f, 0.0f, alpha), vec4(line.color, 1.0), mixVal );
+    return c;
 }
 
 subroutine( ShaderModelType )
@@ -124,11 +127,33 @@ vec4 texturedPhong()
 	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
 	vec4 tex = (texZ*mixZ+texY*mixY+texX*mixX);
 
-	return vec4((ambientAndDiff + spec) * tex.xyz, alpha);
+	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha);
+}
+
+subroutine( ShaderModelType )
+vec4 furPhong()
+{
+    vec3 ambientAndDiff, spec;
+	
+    phongModel( ambientAndDiff, spec );
+	
+	vec4 texZ = texture( snowTexture, input.worldPosition.xy );
+	vec4 texX = texture( snowTexture, input.worldPosition.zy );
+	vec4 texY = texture( snowTexture, input.worldPosition.xz );
+	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
+	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
+	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
+	vec4 tex = (texZ*mixZ+texY*mixY+texX*mixX);
+
+	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha*length(tex));
 }
 
 
 void main()
 {
 	fragColor = shaderModel();
+	if(doWireframe)
+	{
+		fragColor += wireFrame()*wireframeAlpha;
+	}
 }

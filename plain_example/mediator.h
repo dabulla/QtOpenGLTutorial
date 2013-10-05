@@ -38,9 +38,11 @@ public:
     Q_INVOKABLE void setCullmodeBoth();
     Q_INVOKABLE void setCullmodeNone();
 
+	// For qml the methods must have different names. Otherwise qml can not decide which method to use.
 	Q_INVOKABLE void setShaderUniformValue1f(const QString &name, const float &val);
 	Q_INVOKABLE void setShaderUniformValue1i(const QString &name, const int &val);
 	Q_INVOKABLE void setShaderUniformValue3f(const QString &name, const float &x, const float &y, const float &z);
+	Q_INVOKABLE void setShaderUniformValue1b(const QString &name, const bool &val);
 
 
     void setSelectedShader(const QVariant &shader)

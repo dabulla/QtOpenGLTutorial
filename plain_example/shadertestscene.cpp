@@ -174,18 +174,25 @@ void ShaderTestScene::render()
     //shader->bind();
 	passUniforms();
 
+	int renderPasses = m_initialUniforms1i.value("renderPasses", 1);
+
 	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
 	// This let's us express bind/release calls with braces, as they define the scope of the Binder object.
 	// Not all classes have binder defined.
     {
         QOpenGLVertexArrayObject::Binder binder( &m_vao );
-		
-		if(m_shaderInfo.tesselationControlShaderProc.isEmpty())
+		//Render multiple passes (e.g. for fur). This can not alwasy be done in a geometry shader.
+		// If transparency is involved, one would want to draw far primitives first.
+		for(int renderPass=0 ; renderPass < renderPasses ; renderPass++)
 		{
-			m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
-		} else {
-			m_material->shader()->setPatchVertexCount( 1 );
-			m_funcs->glDrawArrays( GL_PATCHES, 0, m_elementCount );
+			m_material->shader()->setUniformValue("renderPass", renderPass);
+			if(m_shaderInfo.tesselationControlShaderProc.isEmpty())
+			{
+				m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
+			} else {
+				m_material->shader()->setPatchVertexCount( 1 );
+				m_funcs->glDrawArrays( GL_PATCHES, 0, m_elementCount );
+			}
 		}
     }
 	m_material->shader()->release();
@@ -339,7 +346,7 @@ void ShaderTestScene::recompileShader()
 	prepareShaders();
 	prepareTextures();
 	//TODO: resize is only needed for viewPortmatrix at the moment. TODO: Add unifomr functions for matrices...
-	resize();
+	resize(m_viewportSize.x(), m_viewportSize.y());
 }
 
 void ShaderTestScene::prepareShaders()
@@ -391,6 +398,11 @@ void ShaderTestScene::prepareShaders()
 	while (iter3f.hasNext()) {
 		iter3f.next();
 		setShaderUniformValue(iter3f.key().toStdString().c_str(), iter3f.value().x(), iter3f.value().y(), iter3f.value().z());
+	}
+	QHashIterator<QString, bool> iter1b(m_initialUniforms1b);
+	while (iter1b.hasNext()) {
+		iter1b.next();
+		setShaderUniformValue(iter1b.key().toStdString().c_str(), iter1b.value());
 	}
 }
 
@@ -560,6 +572,20 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, co
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, QVector3D( x, y, z ) );
+	shader->release();
+}
+
+void ShaderTestScene::setShaderUniformValue(const char *name, const bool &val)
+{
+	m_initialUniforms1b[QString(name)] = val;
+	if(!m_isInitialized)
+	{
+		return;
+	}
+	qDebug() << "Set Uniform \"" << name << "\": " << val;
+	QOpenGLShaderProgramPtr shader = m_material->shader();
+	shader->bind();
+	shader->setUniformValue( name, val );
 	shader->release();
 }
 

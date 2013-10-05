@@ -22,7 +22,11 @@ out Vertex {
 
 uniform mat4 viewportMatrix;
 
-uniform float scale;
+//Make sure to not use reserved words like "smooth"
+uniform bool doSmooth;
+
+uniform bool explosionDoFaceScale;
+uniform float explosionFactor;
 
 uniform	mat3x3 NormalMatrix;
 uniform	mat3x3 ModelNormalMatrix;
@@ -39,10 +43,39 @@ vec3 calcNormal(vec3 p1, vec3 p2, vec3 p3)
 
 void main()
 {
+	// Face Normal. Used for Flat shading and explosion of faces.
+	vec3 faceNormal = calcNormal(input[0].position, input[1].position, input[2].position);
+	
+	vec3 normal[3];
+	if(doSmooth) {
+		normal[0] = normalize(input[0].normal);
+		normal[1] = normalize(input[1].normal);
+		normal[2] = normalize(input[2].normal);
+	} else {
+		normal[0] = faceNormal;
+		normal[1] = faceNormal;
+		normal[2] = faceNormal;
+	}
+	
+	vec3 scaledNormal[3];
+	if(explosionDoFaceScale)
+	{
+		scaledNormal[0] = normalize(input[0].normal);
+		scaledNormal[1] = normalize(input[1].normal);
+		scaledNormal[2] = normalize(input[2].normal);
+	} else {
+		scaledNormal[0] = faceNormal;
+		scaledNormal[1] = faceNormal;
+		scaledNormal[2] = faceNormal;
+	}
+	scaledNormal[0] *= explosionFactor;
+	scaledNormal[1] *= explosionFactor;
+	scaledNormal[2] *= explosionFactor;
+	
 	vec4 transformedPosition[3];
-	transformedPosition[0] = ModelViewProjectionMatrix*vec4(input[0].position-input[0].normal*scale*0.01, 1.0f);
-	transformedPosition[1] = ModelViewProjectionMatrix*vec4(input[1].position-input[1].normal*scale*0.01, 1.0f);
-	transformedPosition[2] = ModelViewProjectionMatrix*vec4(input[2].position-input[2].normal*scale*0.01, 1.0f);
+	transformedPosition[0] = ModelViewProjectionMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
+	transformedPosition[1] = ModelViewProjectionMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
+	transformedPosition[2] = ModelViewProjectionMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
 	
     // Transform each vertex into viewport space
     vec2 p0 = vec2( viewportMatrix * ( transformedPosition[0] / transformedPosition[0].w ) );
@@ -66,39 +99,31 @@ void main()
     // Now add this perpendicular distance as a per-vertex property in addition to
     // the position calculated in the vertex shader.
 
-	vec3 normWorld = calcNormal(input[0].position, input[1].position, input[2].position);
-/*
-	for(int i = 0; i < 3; i++) {
-		output.edgeDistance = vec3( ha*float(i==0), hb*float(i==1), hc*float(i==2) );
-		output.worldPosition = ModelMatrix*vec4(input[i].position-input[i].normal*scale*0.01, 1.0f);
-		output.worldNormal = ModelNormalMatrix*normWorld;
-		output.position = ModelViewMatrix*vec4(input[i].position-input[i].normal*scale*0.01, 10f);
-		output.normal = NormalMatrix*normWorld;
-		gl_Position = ModelViewProjectionMatrix*vec4(input[i].position-input[i].normal*scale*0.01, 1.0f);
-		EmitVertex();
-	}
-*/
-		output.edgeDistance = vec3( ha, 0.f, 0.f );
-		output.worldPosition = ModelMatrix*vec4(input[0].position-input[0].normal*scale*0.01, 1.0f);
-		output.worldNormal = ModelNormalMatrix*normWorld;
-		output.position = ModelViewMatrix*vec4(input[0].position-input[0].normal*scale*0.01, 10f);
-		output.normal = NormalMatrix*normWorld;
-		gl_Position = transformedPosition[0];
-		EmitVertex();
-		output.edgeDistance = vec3( 0.f, hb, 0.f );
-		output.worldPosition = ModelMatrix*vec4(input[1].position-input[1].normal*scale*0.01, 1.0f);
-		output.worldNormal = ModelNormalMatrix*normWorld;
-		output.position = ModelViewMatrix*vec4(input[1].position-input[1].normal*scale*0.01, 10f);
-		output.normal = NormalMatrix*normWorld;
-		gl_Position = transformedPosition[1];
-		EmitVertex();
-		output.edgeDistance = vec3( 0.f, 0.f, hc );
-		output.worldPosition = ModelMatrix*vec4(input[2].position-input[2].normal*scale*0.01, 1.0f);
-		output.worldNormal = ModelNormalMatrix*normWorld;
-		output.position = ModelViewMatrix*vec4(input[2].position-input[2].normal*scale*0.01, 10f);
-		output.normal = NormalMatrix*normWorld;
-		gl_Position = transformedPosition[2];
-		EmitVertex();
+	
+	output.edgeDistance = vec3( ha, 0.f, 0.f );
+	output.worldPosition = ModelMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
+	output.worldNormal = ModelNormalMatrix*normal[0];
+	output.position = ModelViewMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
+	output.normal = NormalMatrix*normal[0];
+	output.alpha = 1.0f;
+	gl_Position = transformedPosition[0];
+	EmitVertex();
+	output.edgeDistance = vec3( 0.f, hb, 0.f );
+	output.worldPosition = ModelMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
+	output.worldNormal = ModelNormalMatrix*normal[1];
+	output.position = ModelViewMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
+	output.normal = NormalMatrix*normal[1];
+	output.alpha = 1.0f;
+	gl_Position = transformedPosition[1];
+	EmitVertex();
+	output.edgeDistance = vec3( 0.f, 0.f, hc );
+	output.worldPosition = ModelMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
+	output.worldNormal = ModelNormalMatrix*normal[2];
+	output.position = ModelViewMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
+	output.normal = NormalMatrix*normal[2];
+	output.alpha = 1.0f;
+	gl_Position = transformedPosition[2];
+	EmitVertex();
     // Finish the primitive off
     EndPrimitive();
 }

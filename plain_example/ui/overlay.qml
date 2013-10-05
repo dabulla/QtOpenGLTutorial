@@ -10,29 +10,31 @@ Rectangle {
     ListModel {
         id: shaderListModel
         ListElement {
-            text: "Phong Shader"
-            vertexShaderFile: "resources/shaders/phong.vert"
-            vertexShaderProc: "plain"
-            fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "plainPhong"
-            uniforms: "phongUniforms"
-        }
-        ListElement {
-            text: "Textured Phong Shader"
-            vertexShaderFile: "resources/shaders/phong.vert"
-            vertexShaderProc: "plain"
-            fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "texturedPhong"
-            uniforms: "phongUniforms"
-        }
-        ListElement {
-            text: "Textured Phong + Geomety Shader"
+            text: "Textured Phong + All Features Shader"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
             fragmentShaderProc: "texturedPhong"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Plain Phong + All Features Shader"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "plainPhong"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Simple Phong Shader"
+            vertexShaderFile: "resources/shaders/phong.vert"
+            vertexShaderProc: "plain"
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "plainPhong"
             uniforms: "phongUniforms"
         }
         ListElement {
@@ -43,6 +45,16 @@ Rectangle {
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
             fragmentShaderProc: "wireFrame"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Fur"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            geometryShaderFile: "resources/shaders/fur.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "furPhong"
             uniforms: "phongUniforms"
         }
     }
@@ -95,6 +107,13 @@ Rectangle {
             step: 0.01
         }
         ListElement {
+            name: "Smooth Shading"
+            uniformName: "doSmooth"
+            isVector: false
+            isBool: true
+            defaultValue: true
+        }
+        ListElement {
             name: "Opacity (Alpha)"
             uniformName: "alpha"
             isVector: false
@@ -105,12 +124,63 @@ Rectangle {
         }
         ListElement {
             name: "Explode"
-            uniformName: "scale"
+            uniformName: "explosionFactor"
             isVector: false
             defaultValue: 0.0
-            minValue: -1
+            minValue: -0.02
+            maxValue: 0.02
+            step: 0.000001
+        }
+        ListElement {
+            name: "Scale Faces on Explode"
+            uniformName: "explosionDoFaceScale"
+            isVector: false
+            isBool: true
+            defaultValue: true
+        }
+        ListElement {
+            name: "Wireframe"
+            uniformName: "doWireframe"
+            isVector: false
+            isBool: true
+            defaultValue: false
+        }
+        ListElement {
+            name: "Wireframe Color"
+            uniformName: "line.color"
+            isVector: true
+            defaultValue: 1.0
+            minValue: 0
             maxValue: 1
-            step: 0.00001
+            stee: 0.01
+        }
+        ListElement {
+            name: "Wireframe Opacity"
+            uniformName: "wireframeAlpha"
+            isVector: false
+            defaultValue: 0.5
+            minValue: 0
+            maxValue: 1
+            step: 0.001
+        }
+        ListElement {
+            name: "Wireframe Thickness"
+            uniformName: "line.width"
+            isVector: false
+            defaultValue: 1.0
+            minValue: 0
+            maxValue: 5
+            step: 0.001
+        }
+        ListElement {
+            name: "Fur Levels"
+            uniformName: "renderPasses"
+            isVector: false
+            isInt: true
+            defaultValue: 5
+            minValue: 0
+            maxValue: 18
+            step: 1
         }
     }
 
@@ -250,6 +320,7 @@ Rectangle {
             Component {
                 id: shaderUniformDelegate
                 ColumnLayout {
+                    spacing: 0
                     RowLayout {
                         spacing: 5
                         Label {
@@ -265,16 +336,21 @@ Rectangle {
                     Slider {
                         anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider
+                        visible: !isBool
                         implicitWidth: rootRectangle.width-10
                         value: defaultValue
                         maximumValue: maxValue
                         minimumValue: minValue
                         stepSize: step
                         onValueChanged: {
-                            if(isVector)
+                            if(isVector) {
                                 application.setShaderUniformValue3f(uniformName, value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            else
-                                application.setShaderUniformValue1f(uniformName, value);
+                            } else {
+                                if(isInt)
+                                    application.setShaderUniformValue1i(uniformName, value);
+                                else
+                                    application.setShaderUniformValue1f(uniformName, value);
+                            }
                             if(linkedCb.checked) {
                                 labeledUniformSlider2.value = value;
                                 labeledUniformSlider3.value = value;
@@ -284,7 +360,7 @@ Rectangle {
                     Slider {
                         anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider2
-                        visible: isVector
+                        visible: isVector && !isBool
                         implicitWidth: rootRectangle.width-10
                         value: defaultValue
                         maximumValue: maxValue
@@ -305,7 +381,7 @@ Rectangle {
                     Slider {
                         anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider3
-                        visible: isVector
+                        visible: isVector && !isBool
                         implicitWidth: rootRectangle.width-10
                         value: defaultValue
                         maximumValue: maxValue
@@ -320,6 +396,14 @@ Rectangle {
                                 labeledUniformSlider.value = value;
                                 labeledUniformSlider2.value = value;
                             }
+                        }
+                    }
+                    CheckBox {
+                        id: wireframeCb
+                        visible: isBool
+                        checked: defaultValue
+                        onCheckedChanged: {
+                            application.setShaderUniformValue1f(uniformName, checked);
                         }
                     }
                 }
