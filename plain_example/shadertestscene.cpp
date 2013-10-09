@@ -108,13 +108,16 @@ void ShaderTestScene::update( float t )
     // Store the time
     const float dt = t - m_time;
     m_time = t;
-	
+
+	//Add acceleration to movement
+	m_offset += m_v;
+
 	m_modelMatrix.rotate(m_rotationSpeed*dt, 0.f, 1.f, 0.0f);
 
 	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
 	{
 		// Update the camera position and orientation
-		translate( m_v * dt * m_metersToUnits );
+		translate( m_offset * dt * m_metersToUnits );
 
 		if ( !qFuzzyIsNull( m_panAngle ) )
 		{
@@ -141,6 +144,9 @@ void ShaderTestScene::update( float t )
 			m_tiltAngle = 0.0f;
 		}
 	}
+	m_offset.setX(0);
+	m_offset.setY(0);
+	m_offset.setZ(0);
 }
 
 void ShaderTestScene::render()
@@ -328,8 +334,13 @@ void ShaderTestScene::pan( const float &angle )
 {
 	QQuaternion q = QQuaternion::fromAxisAndAngle( QVector3D(0.0f,1.0f,0.0f), -angle );
     m_upVector = q.rotatedVector( m_upVector );
-    m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
-    m_viewCenter = m_position + m_cameraToCenter;
+	m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
+	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
+	{
+		m_viewCenter = m_position + m_cameraToCenter;
+	} else {
+		m_position = m_viewCenter - m_cameraToCenter;
+	}
 }
 
 void ShaderTestScene::tilt( const float &angle )
@@ -338,7 +349,12 @@ void ShaderTestScene::tilt( const float &angle )
     QQuaternion q = QQuaternion::fromAxisAndAngle( xBasis, angle );
     m_upVector = q.rotatedVector( m_upVector );
     m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
-    m_viewCenter = m_position + m_cameraToCenter;
+	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
+	{
+		m_viewCenter = m_position + m_cameraToCenter;
+	} else {
+		m_position = m_viewCenter - m_cameraToCenter;
+	}
 }
 
 void ShaderTestScene::recompileShader()

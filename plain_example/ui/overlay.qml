@@ -1,7 +1,7 @@
 import QtQuick 2.1
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
-
+import "./component" as Comp
 
 Rectangle {
     color: "transparent"

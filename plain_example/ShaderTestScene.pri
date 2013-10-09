@@ -53,4 +53,6 @@ OTHER_FILES += \
     resources/objects/truhe.obj3d \
     resources/objects/san-miguel.obj \
     resources/objects/san-miguel.mtl \
-    resources/objects/bunny.obj3d
+    resources/objects/bunny.obj3d \
+    ui/component/AccordionList.qml \
+    ui/component/ListItem.qml

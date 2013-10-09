@@ -66,6 +66,7 @@ public:
     void setVerticalSpeed( float vy ) { m_v.setY( vy ); }
     void setForwardSpeed( float vz ) { m_v.setZ( vz ); }
     void setViewCenterFixed( bool b ) { m_viewCenterFixed = b; }
+    void moveForward( float vz ) { m_offset.setZ( m_offset.z() + vz ); }
 
 
 	enum CameraMode {
@@ -120,6 +121,7 @@ private:
 	QOpenGLDebugLogger m_logger;
 
     QVector3D m_v;
+    QVector3D m_offset;
     bool m_viewCenterFixed;
     float m_panAngle;
     float m_tiltAngle;

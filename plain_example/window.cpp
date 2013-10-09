@@ -240,3 +240,13 @@ void Window::mouseMoveEvent( QMouseEvent* e )
         scene->tilt( dy );
     }
 }
+
+void Window::wheelEvent( QWheelEvent* e )
+{
+    WINDOW_BASE::wheelEvent( e );
+    if (!e->isAccepted())
+    {
+        ShaderTestScene* scene = static_cast<ShaderTestScene*>( m_scene );
+		scene->moveForward(e->delta());
+    }
+}
