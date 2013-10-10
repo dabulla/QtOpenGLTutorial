@@ -8,6 +8,7 @@ layout( triangle_strip, max_vertices = 3 ) out;
 in rawVertex {
     vec3 position;
     vec3 normal;
+    vec2 texCoords;
 } input[3];
 
 //structure MUST have the same name as in the fragment shader (and the same attributes)
@@ -18,6 +19,7 @@ out Vertex {
 	vec4 position;
 	vec3 normal;
 	float alpha;
+    vec2 texCoords;
 } output;
 
 uniform mat4 viewportMatrix;
@@ -106,6 +108,7 @@ void main()
 	output.position = ModelViewMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
 	output.normal = NormalMatrix*normal[0];
 	output.alpha = 1.0f;
+    output.texCoords = input[0].texCoords;
 	gl_Position = transformedPosition[0];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, hb, 0.f );
@@ -114,6 +117,7 @@ void main()
 	output.position = ModelViewMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
 	output.normal = NormalMatrix*normal[1];
 	output.alpha = 1.0f;
+    output.texCoords = input[1].texCoords;
 	gl_Position = transformedPosition[1];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, 0.f, hc );
@@ -122,6 +126,7 @@ void main()
 	output.position = ModelViewMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
 	output.normal = NormalMatrix*normal[2];
 	output.alpha = 1.0f;
+    output.texCoords = input[2].texCoords;
 	gl_Position = transformedPosition[2];
 	EmitVertex();
     // Finish the primitive off

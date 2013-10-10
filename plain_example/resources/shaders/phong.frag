@@ -11,6 +11,7 @@ in Vertex {
 	vec4 position;
 	vec3 normal;
 	float alpha;
+    vec2 texCoords;
 } input;
 
 layout (location = 0) out vec4 fragColor;
@@ -39,18 +40,18 @@ uniform float wireframeAlpha;
 
 uniform float alpha;
 
-uniform sampler2D bunnyTex;
-
-uniform sampler2D grassTexture;
-uniform sampler2D rockTexture;
-uniform sampler2D snowTexture;
+uniform sampler2D diffuseTexture;
+uniform sampler2D heightTexture;
+uniform sampler2D normalTexture;
+uniform sampler2D specularTexture;
 
 uniform mat3x3 NormalMatrix;
 uniform	mat4x4 ModelMatrix;
 uniform mat4x4 ModelViewMatrix;
 uniform mat4x4 ModelViewProjectionMatrix;
 
-void phongModel( out vec3 ambientAndDiff, out vec3 spec )
+
+void phongModel(vec3 normalOffset, out vec3 ambientAndDiff, out vec3 spec)
 {
     vec3 lightDir = normalize( light.position.xyz - input.position.xyz );
     vec3 viewDir = normalize( input.position.xyz );
@@ -74,6 +75,11 @@ void phongModel( out vec3 ambientAndDiff, out vec3 spec )
         spec = light.intensity * material.Ks *
                pow( max( dot( reflectDir , viewDir ), 0.0 ), material.shininess );
     }
+}
+
+void phongModel( out vec3 ambientAndDiff, out vec3 spec )
+{
+	phongModel(vec3(0.f), ambientAndDiff, spec);
 }
 
 subroutine( ShaderModelType )
@@ -112,22 +118,41 @@ vec4 plainPhong()
 	return vec4(ambientAndDiff + spec, alpha);
 }
 
+vec4 getTextureColorProjected(sampler2D samp)
+{
+	vec4 texZ = texture( samp, input.worldPosition.xy );
+	vec4 texX = texture( samp, input.worldPosition.zy );
+	vec4 texY = texture( samp, input.worldPosition.xz );
+	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
+	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
+	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
+	return texZ*mixZ+texY*mixY+texX*mixX;
+}
+
 subroutine( ShaderModelType )
-vec4 texturedPhong()
+vec4 texturePhong()
 {
     vec3 ambientAndDiff, spec;
 	
     phongModel( ambientAndDiff, spec );
 	
-	vec4 texZ = texture( snowTexture, input.worldPosition.xy );
-	vec4 texX = texture( snowTexture, input.worldPosition.zy );
-	vec4 texY = texture( snowTexture, input.worldPosition.xz );
-	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
-	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
-	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
-	vec4 tex = (texZ*mixZ+texY*mixY+texX*mixX);
+	vec4 tex = texture(diffuseTexture, input.texCoords);
+	vec4 texSpec = texture(specularTexture, input.texCoords);
 
-	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha);
+	return vec4((ambientAndDiff + spec*texSpec.x) * tex.xyz, alpha*input.alpha);
+}
+
+subroutine( ShaderModelType )
+vec4 textureProjectedPhong()
+{
+    vec3 ambientAndDiff, spec;
+	
+    phongModel( ambientAndDiff, spec );
+	
+	vec4 tex = getTextureColorProjected(diffuseTexture);
+	vec4 texSpec = getTextureColorProjected(specularTexture);
+
+	return vec4((ambientAndDiff + spec*texSpec.x) * tex.xyz, alpha*input.alpha);
 }
 
 subroutine( ShaderModelType )
@@ -137,17 +162,17 @@ vec4 furPhong()
 	
     phongModel( ambientAndDiff, spec );
 	
-	vec4 texZ = texture( snowTexture, input.worldPosition.xy );
-	vec4 texX = texture( snowTexture, input.worldPosition.zy );
-	vec4 texY = texture( snowTexture, input.worldPosition.xz );
-	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
-	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
-	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
-	vec4 tex = (texZ*mixZ+texY*mixY+texX*mixX);
+	vec4 tex = getTextureColorProjected(diffuseTexture);
+	vec4 transp = getTextureColorProjected(heightTexture);
 
-	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha*length(tex));
+	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha*transp.x);
 }
 
+subroutine( ShaderModelType )
+vec4 showNormals()
+{
+	return vec4(input.worldNormal*3.0f, alpha*input.alpha);
+}
 
 void main()
 {

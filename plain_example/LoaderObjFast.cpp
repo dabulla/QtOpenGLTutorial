@@ -22,7 +22,7 @@ struct Float2
 	float v;
 };
 
-LoaderObj* tempThis = (LoaderObj*)0;
+LoaderObjFast* tempThis = (LoaderObjFast*)0;
 
 void geometric_vertex_callback(obj::float_type x, obj::float_type y, obj::float_type z)
 {
@@ -87,7 +87,7 @@ void error_callback(std::size_t size, const std::string& msg)
 	qDebug() << msg.c_str();
 }
 
-LoaderObj::LoaderObj(const char* fileName):
+LoaderObjFast::LoaderObjFast(const char* fileName):
 	m_vertexCount(0),
 	m_indexCount(0)
 {
@@ -95,9 +95,6 @@ LoaderObj::LoaderObj(const char* fileName):
 	tempThis = this;
 	obj_parser.geometric_vertex_callback(geometric_vertex_callback);
 	obj_parser.error_callback(error_callback);
-	//obj_parser.
-	//obj_parser.texture_vertex_callback()
-	//obj_parser.vertex_normal_callback(vertex_normal_callback);
 	obj_parser.face_callbacks(
 		triangular_face_geometric_vertices_callback,
 		triangular_face_geometric_vertices_texture_vertices_callback,
@@ -121,19 +118,21 @@ LoaderObj::LoaderObj(const char* fileName):
 		polygonal_face_geometric_vertices_texture_vertices_vertex_normals_end_callback);
 
 	obj_parser.parse(fileName);
-	tempThis = (LoaderObj*)0;
-	prepareBuffers();
-}
+	tempThis = (LoaderObjFast*)0;
 
-void LoaderObj::prepareBuffers()
-{
+
 	//m_vertices contains only positions. I could also be calls "m_positions". Normals can also be counted to a vertex.
 	//Historically positions and normals where in the same buffer. The interpretation of the floats in the buffer could be configured.
 	// In new versions of OpenGL, position and normals can be defined in different buffers.
 	m_vertices = new GLfloat[m_vertexCount*3];
 	m_normals = new GLfloat[m_vertexCount*3];
 	m_indices = new GLuint[m_indexCount];
-	
+
+	prepareBuffers();
+}
+
+void LoaderObjFast::prepareBuffers()
+{	
 	for(unsigned int i=0 ; i<m_vertexCount ; i++)
 	{
 		m_vertices[i*3+0] = m_listVertices[i].x;
@@ -141,7 +140,7 @@ void LoaderObj::prepareBuffers()
 		m_vertices[i*3+2] = m_listVertices[i].z;
 	}
 
-	for(unsigned int i=0 ; i<m_indexCount-3 ; i+=3)
+	for(unsigned int i=0 ; i<=m_indexCount-3 ; i+=3)
 	{
 		m_indices[i] = m_listIndices[i];
 		m_indices[i+1] = m_listIndices[i+1];
@@ -163,11 +162,15 @@ void LoaderObj::prepareBuffers()
 
 	GLfloat a[3], b[3], crossprod[3];
 	GLfloat invlength;
-	for(unsigned int i=0 ; i<m_indexCount-3 ; i+=3)
+	for(unsigned int i=0 ; i<=m_indexCount-3 ; i+=3)
 	{
-		GLint i1 = m_indices[i];
-		GLint i2 = m_indices[i+1];
-		GLint i3 = m_indices[i+2];
+		GLuint i1 = m_indices[i];
+		GLuint i2 = m_indices[i+1];
+		GLuint i3 = m_indices[i+2];
+		if(i1>=m_vertexCount || i2>=m_vertexCount || i3>=m_vertexCount)
+		{
+			qDebug() << "Index out of bound" << i;
+		}
 		GLfloat* pV1 = m_vertices+i1*3;
 		GLfloat* pV2 = m_vertices+i2*3;
 		GLfloat* pV3 = m_vertices+i3*3;
@@ -214,23 +217,23 @@ void LoaderObj::prepareBuffers()
 	delete [] adjacentFaces;
 }
 
-GLfloat* LoaderObj::getCalculatedNormals() const
+GLfloat* LoaderObjFast::getCalculatedNormals() const
 {
 	return m_normals;
 }
 
-LoaderObj::~LoaderObj(void)
+LoaderObjFast::~LoaderObjFast(void)
 {
 	delete [] m_vertices;
 	delete [] m_normals;
 	delete [] m_indices;
 }
 
-GLuint LoaderObj::getVertexCount() const
+GLuint LoaderObjFast::getVertexCount() const
 {
 	return m_vertexCount;
 }
-GLuint LoaderObj::getIndexCount() const
+GLuint LoaderObjFast::getIndexCount() const
 {
 	return m_indexCount;
 }
@@ -240,12 +243,12 @@ GLuint LoaderObj::getIndexCount() const
 //	return m_floatsPerVert;
 //}
 
-GLfloat* LoaderObj::getVB() const
+GLfloat* LoaderObjFast::getVB() const
 {
 	return m_vertices;
 }
 
-GLuint* LoaderObj::getIB() const
+GLuint* LoaderObjFast::getIB() const
 {
 	return m_indices;
 }

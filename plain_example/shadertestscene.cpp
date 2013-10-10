@@ -26,9 +26,13 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_viewCenterFixed( false ),
       m_panAngle( 0.0f ),
       m_tiltAngle( 0.0f ),
+      m_positionBuffer( QOpenGLBuffer::VertexBuffer ),
       m_normalsBuffer( QOpenGLBuffer::VertexBuffer ),
-      m_vertexBuffer( QOpenGLBuffer::VertexBuffer ),
       m_indexBuffer( QOpenGLBuffer::IndexBuffer ),
+      m_quadPositionBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_quadNormalsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_quadTexCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_quadIndexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_screenSpaceError( 12.0f ),
       m_modelMatrix(),
       m_time( 0.0f ),
@@ -37,6 +41,7 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
 	  m_material( 0 ),
 	  m_isInitialized(false),
 	  m_cameraMode(CameraMode::CAMERMODE_WALKTHROUGH),
+	  m_currentObject(CurrentObject::OBJECT_QUAD),
 	  m_glCullMode(GL_BACK),
 	  m_rotationSpeed(0.0f),
 	  m_position( -1.3f, 1.5f, 2.0f ),
@@ -99,7 +104,6 @@ void ShaderTestScene::initialise()
     m_modelMatrix.setToIdentity();
 	//m_modelMatrix.scale(0.05f); // Crytek sponza
 	m_modelMatrix.scale(10.f); // bunny
-
 }
 
 void ShaderTestScene::update( float t )
@@ -131,7 +135,7 @@ void ShaderTestScene::update( float t )
 			m_tiltAngle = 0.0f;
 		}
 	} else {
-
+		translate( m_offset * dt * m_metersToUnits );
 		if ( !qFuzzyIsNull( m_panAngle ) )
 		{
 			pan( m_panAngle );
@@ -166,7 +170,7 @@ void ShaderTestScene::render()
 		m_funcs->glCullFace(m_glCullMode);
 	}
 	m_funcs->glEnable(GL_BLEND);
-	m_funcs->glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//m_funcs->glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Avoid flickering after Qt Ui updates. Qt updates only a portion of the screen.
 	//If we do not reset viewport size, our rendering will be of the size of the last gui-element qt drawed.
@@ -182,22 +186,35 @@ void ShaderTestScene::render()
 
 	int renderPasses = m_initialUniforms1i.value("renderPasses", 1);
 
+	int elementCount;
+	QOpenGLVertexArrayObject* vao;
+	switch(m_currentObject)
+	{
+	case CurrentObject::OBJECT_BUNNY:
+		elementCount = m_elementCount;
+		vao = &m_vaoBunny;
+		break;
+	case CurrentObject::OBJECT_QUAD:
+		elementCount = 6;
+		vao = &m_vaoQuad;
+		break;
+	}
 	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
 	// This let's us express bind/release calls with braces, as they define the scope of the Binder object.
 	// Not all classes have binder defined.
     {
-        QOpenGLVertexArrayObject::Binder binder( &m_vao );
+        QOpenGLVertexArrayObject::Binder binder( vao );
 		//Render multiple passes (e.g. for fur). This can not alwasy be done in a geometry shader.
 		// If transparency is involved, one would want to draw far primitives first.
 		for(int renderPass=0 ; renderPass < renderPasses ; renderPass++)
 		{
 			m_material->shader()->setUniformValue("renderPass", renderPass);
-			if(m_shaderInfo.tesselationControlShaderProc.isEmpty())
+			if(m_shaderInfo.tesselationControlShaderFile.isEmpty())
 			{
-				m_funcs->glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
+				m_funcs->glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
 			} else {
-				m_material->shader()->setPatchVertexCount( 1 );
-				m_funcs->glDrawArrays( GL_PATCHES, 0, m_elementCount );
+				m_material->shader()->setPatchVertexCount( 3 );
+				m_funcs->glDrawElements(GL_PATCHES, elementCount, GL_UNSIGNED_INT, (GLvoid*)0);
 			}
 		}
     }
@@ -223,6 +240,11 @@ void ShaderTestScene::passUniforms()
     shader->setUniformValue( "ModelNormalMatrix", worldNormalMatrix );
     shader->setUniformValue( "NormalMatrix", normalMatrix );
     shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
+
+	QVector4D worldLightDirection( sinf( m_lightTheta * degToRad )*50.f, cosf( m_lightTheta * degToRad )*50.f, 0.0f, 0.0f );
+	//QMatrix4x4 worldToEyeNormal( (m_camera->viewMatrix() * m_modelMatrix).normalMatrix() );
+	QVector4D lightDirection = (m_viewMatrix * m_modelMatrix) * worldLightDirection;
+	shader->setUniformValue( "light.position", lightDirection );
 
 	// Set the active Shader subroutine
 	// Subroutines are functions in the shader. They can be set almost in the same way as other uniform values
@@ -447,32 +469,53 @@ void ShaderTestScene::prepareTextures()
     tilingSampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
     tilingSampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
 
-    QImage grassImage( "./resources/textures/grass.png" );
+    //QImage grassImage( "./resources/textures/grass.png" );
+	QImage diffuseImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/diffus.png" );
     m_funcs->glActiveTexture( GL_TEXTURE0 );
-    TexturePtr grassTexture( new Texture );
-    grassTexture->create();
-    grassTexture->bind();
-    grassTexture->setImage( grassImage );
-    grassTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 1, grassTexture, tilingSampler, QByteArrayLiteral( "grassTexture" ) );
+    TexturePtr diffuseTexture( new Texture );
+    diffuseTexture->create();
+    diffuseTexture->bind();
+    diffuseTexture->setImage( diffuseImage );
+    diffuseTexture->generateMipMaps();
+    m_material->setTextureUnitConfiguration( 1, diffuseTexture, tilingSampler, QByteArrayLiteral( "diffuseTexture" ) );
 
-    QImage rockImage( "./resources/textures/rock.png" );
+    //QImage rockImage( "./resources/textures/rock.png" );
+	QImage heightImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/height.png" );
     m_funcs->glActiveTexture( GL_TEXTURE1 );
-    TexturePtr rockTexture( new Texture );
-    rockTexture->create();
-    rockTexture->bind();
-    rockTexture->setImage( rockImage );
-    rockTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 2, rockTexture, tilingSampler, QByteArrayLiteral( "rockTexture" ) );
+    TexturePtr heightTexture( new Texture );
+    heightTexture->create();
+    heightTexture->bind();
+    heightTexture->setImage( heightImage );
+    heightTexture->generateMipMaps();
+    m_material->setTextureUnitConfiguration( 2, heightTexture, tilingSampler, QByteArrayLiteral( "heightTexture" ) );
 
-    QImage snowImage( "./resources/textures/snowrocks.png" );
+    //QImage snowImage( "./resources/textures/snowrocks.png" );
+	QImage normalImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/normal.png" );
     m_funcs->glActiveTexture( GL_TEXTURE2 );
-    TexturePtr snowTexture( new Texture );
-    snowTexture->create();
-    snowTexture->bind();
-    snowTexture->setImage( snowImage );
-    snowTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 3, snowTexture, tilingSampler, QByteArrayLiteral( "snowTexture" ) );
+    TexturePtr normalTexture( new Texture );
+    normalTexture->create();
+    normalTexture->bind();
+    normalTexture->setImage( normalImage );
+    normalTexture->generateMipMaps();
+    m_material->setTextureUnitConfiguration( 3, normalTexture, tilingSampler, QByteArrayLiteral( "normalTexture" ) );
+
+	QImage specularImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/specular.png" );
+    m_funcs->glActiveTexture( GL_TEXTURE3 );
+    TexturePtr specularTexture( new Texture );
+    specularTexture->create();
+    specularTexture->bind();
+    specularTexture->setImage( specularImage );
+    specularTexture->generateMipMaps();
+    m_material->setTextureUnitConfiguration( 4, specularTexture, tilingSampler, QByteArrayLiteral( "specularTexture" ) );
+
+	QImage displaceImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/displacement.png" );
+    m_funcs->glActiveTexture( GL_TEXTURE4 );
+    TexturePtr displaceTexture(new Texture );
+    displaceTexture->create();
+    displaceTexture->bind();
+    displaceTexture->setImage( displaceImage );
+    displaceTexture->generateMipMaps();
+    m_material->setTextureUnitConfiguration( 5, displaceTexture, tilingSampler, QByteArrayLiteral( "displaceTexture" ) );
 
     m_funcs->glActiveTexture( GL_TEXTURE0 );
 }
@@ -488,7 +531,6 @@ void ShaderTestScene::prepareVertexBuffers()
 	m_elementCount = loader.getIndexCount();
 	m_vertexCount = loader.getVertexCount();
 	
-	//Buffer filled by compute shader
     m_normalsBuffer.create();
     m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_normalsBuffer.bind();
@@ -496,12 +538,12 @@ void ShaderTestScene::prepareVertexBuffers()
 	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) ); //TODO: Kommentar (GPU)
     m_normalsBuffer.release();
 
-    m_vertexBuffer.create();
-    m_vertexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_vertexBuffer.bind();
+    m_positionBuffer.create();
+    m_positionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_positionBuffer.bind();
 	GLfloat *pVB = loader.getVB();
-	m_vertexBuffer.allocate( pVB, m_vertexCount*3*sizeof(GLfloat) );
-    m_vertexBuffer.release();
+	m_positionBuffer.allocate( pVB, m_vertexCount*3*sizeof(GLfloat) );
+    m_positionBuffer.release();
 	
     m_indexBuffer.create();
     m_indexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
@@ -512,31 +554,92 @@ void ShaderTestScene::prepareVertexBuffers()
 
 	//genNormalsGPU();
 
-	int stride = 3*sizeof(float);
-    m_vao.create();
+    m_vaoBunny.create();
     {
-        QOpenGLVertexArrayObject::Binder binder( &m_vao );
+        QOpenGLVertexArrayObject::Binder binder( &m_vaoBunny );
 		QOpenGLShaderProgramPtr shader = m_material->shader();
         shader->bind();
-        m_vertexBuffer.bind();
-        //shader->setAttributeBuffer( "vertexPosition", GL_FLOAT, 0, 3 );
-		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, stride);
-		//shader->setAttributeBuffer("in_Color", GL_FLOAT, 0, 3, stride);
+
+        m_positionBuffer.bind();
+		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Position" );
-        //shader->enableAttributeArray( "in_Color" );
 
         m_normalsBuffer.bind();
-		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, stride);
+		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Normal" );
-		//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
-		//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
+
 		m_indexBuffer.bind();
     }
-	//TODO: Kommentar, nach vao alles releasen, nicht automatisch
+	//After using the vao, resources must be released
     m_material->shader()->release();
-    m_vertexBuffer.release();
+    m_positionBuffer.release();
     m_normalsBuffer.release();
     m_indexBuffer.release();
+
+
+	//The same for a quad object
+	const float quadVertexPositions[] = { -1.f,-1.f,0.f, 
+									1.f,-1.f,0.f,
+									1.f, 1.f,0.f,
+								   -1.f, 1.f,0.f};
+	const int quadIndices[] = {0,1,2,0,2,3};
+	const float quadNormals[] = {   0.f,0.f,1.f, 
+									0.f,0.f,1.f,
+									0.f,0.f,1.f,
+									0.f,0.f,1.f};
+
+	const float quadTexCoords[] = { 0.f, 0.f, 
+									1.f, 0.f,
+									1.f, 1.f,
+									0.f, 1.f};
+	
+    m_quadPositionBuffer.create();
+    m_quadPositionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadPositionBuffer.bind();
+	m_quadPositionBuffer.allocate( quadVertexPositions, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
+    m_quadPositionBuffer.release();
+	
+    m_quadIndexBuffer.create();
+    m_quadIndexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadIndexBuffer.bind();
+	m_quadIndexBuffer.allocate( quadIndices, 2*3*sizeof(GLuint) ); // 2Faces*3VertexIndices
+    m_quadIndexBuffer.release();
+
+    m_quadNormalsBuffer.create();
+    m_quadNormalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadNormalsBuffer.bind();
+	m_quadNormalsBuffer.allocate(quadNormals, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
+    m_quadNormalsBuffer.release();
+
+    m_quadTexCoordsBuffer.create();
+    m_quadTexCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadTexCoordsBuffer.bind();
+	m_quadTexCoordsBuffer.allocate(quadTexCoords, 4*2*sizeof(GLfloat) ); // 4 Vertices for the quad, 2 components per vertex (u, v)
+    m_quadTexCoordsBuffer.release();
+	
+    m_vaoQuad.create();
+    {
+        QOpenGLVertexArrayObject::Binder binder( &m_vaoQuad );
+		QOpenGLShaderProgramPtr shader = m_material->shader();
+        shader->bind();
+        m_quadPositionBuffer.bind();
+		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Position" );
+
+        m_quadNormalsBuffer.bind();
+		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Normal" );
+
+        m_quadTexCoordsBuffer.bind();
+		shader->setAttributeBuffer("in_TexCoords", GL_FLOAT, 0, 2, 2*sizeof(float));
+        shader->enableAttributeArray( "in_TexCoords" );
+		m_quadIndexBuffer.bind();
+    }
+    m_material->shader()->release();
+    m_quadPositionBuffer.release();
+    m_quadNormalsBuffer.release();
+	m_quadTexCoordsBuffer.release();
+    m_quadIndexBuffer.release();
 }
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
@@ -546,17 +649,14 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 	{
 		return;
 	}
-	qDebug() << "Set Uniform \"" << name << "\": " << val;
+	qDebug() << "Set Uniform " << name << ": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 
     // Set the lighting parameters
 	if(QString(name) == QString("lightTheta"))
 	{
-		QVector4D worldLightDirection( sinf( val * degToRad )*50.f, cosf( val * degToRad )*50.f, 0.0f, 0.0f );
-		//QMatrix4x4 worldToEyeNormal( (m_camera->viewMatrix() * m_modelMatrix).normalMatrix() );
-		QVector4D lightDirection = (m_viewMatrix * m_modelMatrix) * worldLightDirection;
-		shader->setUniformValue( "light.position", lightDirection );
+		m_lightTheta = val;
 	} else {
 		shader->setUniformValue( name, val );
 	}
@@ -570,7 +670,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const GLint &val)
 	{
 		return;
 	}
-	qDebug() << "Set Uniform \"" << name << "\": " << val;
+	qDebug() << "Set Uniform " << name << ": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, val );
@@ -584,7 +684,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &x, co
 	{
 		return;
 	}
-	qDebug() << "Set Uniform \"" << name << "\": (" << x << ", " << y << ", " << z << ")";
+	qDebug() << "Set Uniform " << name << ": (" << x << ", " << y << ", " << z << ")";
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, QVector3D( x, y, z ) );
@@ -598,7 +698,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const bool &val)
 	{
 		return;
 	}
-	qDebug() << "Set Uniform \"" << name << "\": " << val;
+	qDebug() << "Set Uniform " << name << ": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
 	shader->setUniformValue( name, val );

@@ -5,22 +5,21 @@ import "./component" as Comp
 
 Rectangle {
     color: "transparent"
-    //color.a: 0.2
 
     ListModel {
         id: shaderListModel
         ListElement {
-            text: "Textured Phong + All Features Shader"
+            text: "Textured Phong (Projection)"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "texturedPhong"
+            fragmentShaderProc: "textureProjectedPhong"
             uniforms: "phongUniforms"
         }
         ListElement {
-            text: "Plain Phong + All Features Shader"
+            text: "Plain Phong"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
@@ -38,7 +37,7 @@ Rectangle {
             uniforms: "phongUniforms"
         }
         ListElement {
-            text: "Wireframe"
+            text: "Only Wireframe"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
@@ -55,6 +54,34 @@ Rectangle {
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
             fragmentShaderProc: "furPhong"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Tesselation using Textures"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            tesselationControlShaderFile: "resources/shaders/tess.tcs"
+            tesselationControlShaderProc: ""
+            tesselationEvaluationShaderFile: "resources/shaders/tess.tes"
+            tesselationEvaluationShaderProc: ""
+            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "texturePhong"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "TessNormals"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            tesselationControlShaderFile: "resources/shaders/tess.tcs"
+            tesselationControlShaderProc: ""
+            tesselationEvaluationShaderFile: "resources/shaders/tess.tes"
+            tesselationEvaluationShaderProc: ""
+            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "showNormals"
             uniforms: "phongUniforms"
         }
     }
@@ -74,7 +101,7 @@ Rectangle {
             name: "Material Kd"
             uniformName: "material.Kd"
             isVector: true
-            defaultValue: 0.7
+            defaultValue: 0.8
             minValue: 0
             maxValue: 3
             step: 0.1
@@ -89,13 +116,13 @@ Rectangle {
             stee: 0.1
         }
         ListElement {
-            name: "Light angle"
-            uniformName: "lightTheta"
-            isVector: false
+            name: "Light Position"
+            uniformName: "light.position"
+            isVector: true
             defaultValue: 30.0
-            minValue: 0
-            maxValue: 180
-            step: 0.1
+            minValue: -50
+            maxValue: 50
+            step: 0.001
         }
         ListElement {
             name: "Material Shininess"
@@ -111,7 +138,7 @@ Rectangle {
             uniformName: "doSmooth"
             isVector: false
             isBool: true
-            defaultValue: true
+            defaultChecked: true
         }
         ListElement {
             name: "Opacity (Alpha)"
@@ -129,21 +156,21 @@ Rectangle {
             defaultValue: 0.0
             minValue: -0.02
             maxValue: 0.02
-            step: 0.000001
+            step: 0.001
         }
         ListElement {
             name: "Scale Faces on Explode"
             uniformName: "explosionDoFaceScale"
             isVector: false
             isBool: true
-            defaultValue: true
+            defaultChecked: true
         }
         ListElement {
             name: "Wireframe"
             uniformName: "doWireframe"
             isVector: false
             isBool: true
-            defaultValue: false
+            defaultChecked: false
         }
         ListElement {
             name: "Wireframe Color"
@@ -182,17 +209,55 @@ Rectangle {
             maxValue: 18
             step: 1
         }
+        ListElement {
+            name: "Tess Level Inner"
+            uniformName: "tessLevelInner"
+            isVector: false
+            isInt: false
+            defaultValue: 5
+            minValue: 1
+            maxValue: 50
+            step: 1
+        }
+        ListElement {
+            name: "Tess Level Outer"
+            uniformName: "tessLevelOuter"
+            isVector: false
+            isInt: false
+            defaultValue: 5
+            minValue: 1
+            maxValue: 50
+            step: 1
+        }
+        ListElement {
+            name: "Tess Scale"
+            uniformName: "tessScale"
+            isVector: false
+            isInt: false
+            defaultValue: 1
+            minValue: 0.01
+            maxValue: 10
+            step: 0.01
+        }
     }
 
     Rectangle {
         id: rootRectangle
         width: 200
         anchors.right: parent.right
-        //color.a: 0.5
-        color: "transparent"
-        ColumnLayout {
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        color.a: 0.5
+        //color: "transparent"
+
+        Flickable {
             anchors.fill: parent
-            id: columnlayout1
+            contentHeight: controlsColumn.height
+            contentWidth: width
+
+        ColumnLayout  {
+            //anchors.fill: parent
+            id: controlsColumn
             Button {
                 id: compileBtn
                 text: "Compile Shader"
@@ -211,8 +276,8 @@ Rectangle {
             }
             GroupBox {
                 id: cameraModeGroupBox
-                anchors.left: parent.left
-                anchors.right: parent.right
+                ///anchors.left: parent.left
+                ///anchors.right: parent.right
                 title: "Camera Mode"
                 ExclusiveGroup { id: cameraMode }
                 ColumnLayout {
@@ -244,7 +309,7 @@ Rectangle {
             }
             CheckBox {
                 id: rotationCb
-                anchors.left: parent.left
+                ///anchors.left: parent.left
                 text: "Rotate"
                 onCheckedChanged: {
                     console.log("rotation: "+checked);
@@ -256,8 +321,8 @@ Rectangle {
             }
             GroupBox {
                 id: cullModeGroupBox
-                anchors.left: parent.left
-                anchors.right: parent.right
+                ///anchors.left: parent.left
+                ///anchors.right: parent.right
                 title: "Camera Mode"
                 ExclusiveGroup { id: cullMode }
                 ColumnLayout {
@@ -326,6 +391,7 @@ Rectangle {
                         Label {
                             id: labeledUniformLabel
                             text: name + ": " + labeledUniformSlider.value.toFixed(2) + (isVector?", " + labeledUniformSlider2.value.toFixed(2) + ", " + labeledUniformSlider3.value.toFixed(2) :"")
+                            font.bold: isBool?boolCb.checked!==defaultChecked:labeledUniformSlider.value!==defaultValue||(isVector&&(labeledUniformSlider2.value!==defaultValue||labeledUniformSlider3.value!==defaultValue))
                         }
                         CheckBox {
                             id: linkedCb
@@ -334,7 +400,7 @@ Rectangle {
                         }
                     }
                     Slider {
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        ///anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider
                         visible: !isBool
                         implicitWidth: rootRectangle.width-10
@@ -358,7 +424,7 @@ Rectangle {
                         }
                     }
                     Slider {
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        ///anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider2
                         visible: isVector && !isBool
                         implicitWidth: rootRectangle.width-10
@@ -369,8 +435,12 @@ Rectangle {
                         onValueChanged: {
                             if(isVector)
                                 application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            else
-                                application.setShaderUniformValue1f(uniformName, value);
+                            else {
+                                if(isInt)
+                                    application.setShaderUniformValue1i(uniformName, value);
+                                else
+                                    application.setShaderUniformValue1f(uniformName, value);
+                            }
                             if(linkedCb.checked) {
                                 labeledUniformSlider.value = value;
                                 labeledUniformSlider3.value = value;
@@ -379,7 +449,7 @@ Rectangle {
                         }
                     }
                     Slider {
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        ///anchors.horizontalCenter: parent.horizontalCenter
                         id: labeledUniformSlider3
                         visible: isVector && !isBool
                         implicitWidth: rootRectangle.width-10
@@ -390,8 +460,12 @@ Rectangle {
                         onValueChanged: {
                             if(isVector)
                                 application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            else
-                                application.setShaderUniformValue1f(uniformName, value);
+                            else {
+                                if(isInt)
+                                    application.setShaderUniformValue1i(uniformName, value);
+                                else
+                                    application.setShaderUniformValue1f(uniformName, value);
+                            }
                             if(linkedCb.checked) {
                                 labeledUniformSlider.value = value;
                                 labeledUniformSlider2.value = value;
@@ -399,11 +473,15 @@ Rectangle {
                         }
                     }
                     CheckBox {
-                        id: wireframeCb
+                        id: boolCb
                         visible: isBool
-                        checked: defaultValue
+                        checked: defaultChecked
                         onCheckedChanged: {
-                            application.setShaderUniformValue1f(uniformName, checked);
+                            if(isBool)
+                            {
+                                console.log("Set: "+uniformName+" to "+checked+" (1b)");
+                                application.setShaderUniformValue1b(uniformName, checked);
+                            }
                         }
                     }
                 }
@@ -412,6 +490,7 @@ Rectangle {
                     model: phongUniformsListModel
                     delegate: shaderUniformDelegate
                 }
+        }
         }
     }
 }

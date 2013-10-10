@@ -1,0 +1,61 @@
+#version 400
+#pragma debug(on)
+
+layout(triangles, equal_spacing, ccw) in;
+
+in rawVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} input[];
+
+out rawVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} output;
+
+uniform sampler2D heightTexture;
+uniform sampler2D normalTexture;
+
+uniform float tessScale;
+
+const vec2 size = vec2(2.0,0.0);
+const ivec3 off = ivec3(-1,0,1);
+
+//in case there is no normal map, an algorithm like this could be used
+vec3 normalFromHeightMap(sampler2D tex, vec2 tex_coord)
+{
+    float s11 = texture(tex, tex_coord).x;
+    float s01 = textureOffset(tex, tex_coord, off.xy).x;
+    float s21 = textureOffset(tex, tex_coord, off.zy).x;
+    float s10 = textureOffset(tex, tex_coord, off.yx).x;
+    float s12 = textureOffset(tex, tex_coord, off.yz).x;
+    vec3 va = normalize(vec3(size.xy,s21-s01));
+    vec3 vb = normalize(vec3(size.yx,s12-s10));
+    return cross(va,vb);
+}
+
+void main()
+{
+    vec3 p0 = gl_TessCoord.x * input[0].position;
+    vec3 p1 = gl_TessCoord.y * input[1].position;
+    vec3 p2 = gl_TessCoord.z * input[2].position;
+	vec3 position = p0+p1+p2;
+	
+    vec3 n0 = gl_TessCoord.x * input[0].normal;
+    vec3 n1 = gl_TessCoord.y * input[1].normal;
+    vec3 n2 = gl_TessCoord.z * input[2].normal;
+	vec3 normal = n0+n1+n2;
+	
+    vec2 t0 = gl_TessCoord.x * input[0].texCoords;
+    vec2 t1 = gl_TessCoord.y * input[1].texCoords;
+    vec2 t2 = gl_TessCoord.z * input[2].texCoords;
+	vec2 texCoords = t0+t1+t2;
+	
+	vec2 uv = position.xy;
+	float bump = texture(heightTexture,  texCoords).x;
+	output.position = position-normal*(bump-0.5)*tessScale;
+	output.normal = normal;//*texture(normalTexture,  texCoords).xyz;//*normalFromHeightMap(heightTexture, uv).xyz;
+	output.texCoords = texCoords;
+}

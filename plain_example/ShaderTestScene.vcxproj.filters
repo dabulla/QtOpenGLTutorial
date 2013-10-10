@@ -102,6 +102,9 @@
     <ClCompile Include="LoaderObjFast.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
+    <ClCompile Include="LoaderObj.cpp">
+      <Filter>Source Dateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="common\abstractscene.h">

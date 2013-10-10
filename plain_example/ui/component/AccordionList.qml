@@ -14,24 +14,6 @@ import QtQuick 2.0
         property int indent: 20
         // Scrollbar width
         property int scrollBarWidth: 8
-        // Background for list item
-        property string bgImage: './gfx/list_item.png'
-        // Background image for pressed list item
-        property string bgImagePressed: './gfx/list_item_pressed.png'
-        // Background image for active list item (currently not used)
-        property string bgImageActive: './gfx/list_item_active.png'
-        // Background image for subitem
-        property string bgImageSubItem: "./gfx/list_subitem.png"
-        // Arrow indicator for item expansion
-        property string arrow: './gfx/arrow.png'
-        // Font properties for top level items
-        property string headerItemFontName: "Helvetica"
-        property int headerItemFontSize: 12
-        property color headerItemFontColor: "black"
-        // Font properties for  subitems
-        property string subItemFontName: "Helvetica"
-        property int subItemFontSize: headerItemFontSize-1
-        property color subItemFontColor: "black"
 
         signal itemClicked(string itemTitle, string subItemTitle)
 
@@ -76,12 +58,6 @@ import QtQuick 2.0
                     text: itemTitle
                     onClicked: expanded = !expanded
 
-                    bgImage: container.bgImage
-                    bgImagePressed: container.bgImagePressed
-                    bgImageActive: container.bgImageActive
-                    fontName: container.headerItemFontName
-                    fontSize: container.headerItemFontSize
-                    fontColor: container.headerItemFontColor
                     fontBold: true
 
                     // Arrow image indicating the state of expansion.
@@ -136,11 +112,6 @@ import QtQuick 2.0
                                 width: delegate.width
                                 height: subItemsRect.itemHeight
                                 text: subItemTitle
-                                bgImage: container.bgImageSubItem
-                                fontName: container.subItemFontName
-                                fontSize: container.subItemFontSize
-                                fontColor: container.subItemFontColor
-                                textIndent: container.indent
                                 onClicked: {
                                     console.log("Clicked: "+itemTitle + "/" + subItemTitle)
                                     itemClicked(itemTitle, subItemTitle)

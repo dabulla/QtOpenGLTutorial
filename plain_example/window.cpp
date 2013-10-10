@@ -8,6 +8,7 @@
 #include <QOpenGLContext>
 #include <QTimer>
 #include <qqmlcontext.h>
+#include <qqmlengine.h>
 
 Window::Window( QWindow* window )
     : WINDOW_BASE( window ),
@@ -170,8 +171,7 @@ void Window::keyPressEvent( QKeyEvent* e )
             break;
 			
         case Qt::Key_R:
-			rootObject()->deleteLater();
-			setSource(QUrl());
+			engine()->clearComponentCache();
 			loadUi();
             break;
         default:

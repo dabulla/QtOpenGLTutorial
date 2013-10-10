@@ -1,0 +1,40 @@
+#version 400
+#pragma debug(on)
+layout(vertices = 3) out;
+
+//struct rawVertex {
+//    vec3 position;
+//    vec3 normal;
+//    vec2 texCoords;
+//}
+
+//in rawVertex input[];
+//out rawVertex output[];
+
+in rawVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} input[];
+
+out rawVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} output[];
+
+uniform float tessLevelInner;
+uniform float tessLevelOuter;
+
+void main()
+{
+    output[gl_InvocationID].position = input[gl_InvocationID].position;
+    output[gl_InvocationID].normal = input[gl_InvocationID].normal;
+    output[gl_InvocationID].texCoords = input[gl_InvocationID].texCoords;
+    if (gl_InvocationID == 0) {
+        gl_TessLevelInner[0] = tessLevelInner;
+        gl_TessLevelOuter[0] = tessLevelOuter;
+        gl_TessLevelOuter[1] = tessLevelOuter;
+        gl_TessLevelOuter[2] = tessLevelOuter;
+    }
+}

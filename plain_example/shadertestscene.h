@@ -74,6 +74,11 @@ public:
 		CAMERMODE_OBJECTINSPECTION
 	};
 
+	enum CurrentObject {
+		OBJECT_BUNNY,
+		OBJECT_QUAD
+	};
+
     // Translate relative to camera orientation axes
     void translate( const QVector3D& vLocal);
 
@@ -116,6 +121,8 @@ private:
     QMatrix4x4 m_projectionMatrix;
     QMatrix4x4 m_viewProjectionMatrix;
 
+	float m_lightTheta;
+
 	bool m_isInitialized;
 	ShaderInfo m_shaderInfo;
 	QOpenGLDebugLogger m_logger;
@@ -127,20 +134,27 @@ private:
     float m_tiltAngle;
 
 	CameraMode m_cameraMode;
-	//Note: we must not use a shared pointer here, as Qt would try to delete the element twice when the application exits.
-	//QQuickItem* m_rootObject;
+
+	CurrentObject m_currentObject;
 	
     QMatrix4x4 m_viewportMatrix;
     QVector2D m_viewportSize;
 
-    QOpenGLVertexArrayObject m_vao;
-	QOpenGLBuffer m_vertexBuffer;
-	QOpenGLBuffer m_indexBuffer;
+    QOpenGLVertexArrayObject m_vaoBunny;
 
+	QOpenGLBuffer m_positionBuffer;
 	QOpenGLBuffer m_normalsBuffer;
+	QOpenGLBuffer m_indexBuffer;
 
     unsigned int  m_elementCount;
 	unsigned int m_vertexCount;
+	
+    QOpenGLVertexArrayObject m_vaoQuad;
+
+	QOpenGLBuffer m_quadPositionBuffer;
+	QOpenGLBuffer m_quadNormalsBuffer;
+	QOpenGLBuffer m_quadTexCoordsBuffer;
+	QOpenGLBuffer m_quadIndexBuffer;
 
     float m_screenSpaceError;
 	

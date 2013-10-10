@@ -18,11 +18,12 @@ struct VertexTex
 	float v;
 };
 
-LoaderObj::LoaderObj(QFile& file):
+LoaderObj::LoaderObj(const char* fileName):
 	m_floatsPerVert(3),
 	m_vertexCount(0),
 	m_indexCount(0)
 {
+	QFile file(fileName);
 	if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
 		qCritical(file.errorString().toLatin1().data());

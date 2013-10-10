@@ -18,6 +18,7 @@ out Vertex {
 	vec4 position;
 	vec3 normal;
 	float alpha;
+    vec2 texCoords;
 } output;
 
 uniform mat4 viewportMatrix;
@@ -41,12 +42,12 @@ void main()
 		for (int i = 0; i < gl_in.length(); i++)
 		{
 			vec4 transformedPosition = ModelViewProjectionMatrix*vec4(input[i].position-input[i].normal*explosionFactor*float(renderPass), 1.0f);
-//			vec4 transformedPosition = ModelViewProjectionMatrix*vec4(input[i].position, 1.0f);
 			output.worldPosition = ModelMatrix*vec4(input[i].position, 1.0f);
 			output.worldNormal = ModelNormalMatrix*input[i].normal;
 			output.position = ModelViewMatrix*vec4(input[i].position, 1.0f);
 			output.normal = NormalMatrix*input[i].normal;
 			output.alpha = 1.f-float(renderPass+1)/float(renderPasses+1);
+			output.texCoords = input[i].texCoords;
 			gl_Position = transformedPosition;
 			EmitVertex();
 		}
