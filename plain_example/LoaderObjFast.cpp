@@ -186,8 +186,8 @@ void LoaderObjFast::prepareBuffers()
 		crossprod[0] = a[1]*b[2]-a[2]*b[1];
 		crossprod[1] = a[2]*b[0]-a[0]*b[2];
 		crossprod[2] = a[0]*b[1]-a[1]*b[0];
-		//normalize
-		invlength = 1.f/sqrt(pow(crossprod[0],2.f)+pow(crossprod[1],2.f)+pow(crossprod[2],2.f));
+		//normalize, switch side (ccw triangles)
+		invlength = -1.f/sqrt(pow(crossprod[0],2.f)+pow(crossprod[1],2.f)+pow(crossprod[2],2.f));
 		crossprod[0] *= invlength;
 		crossprod[1] *= invlength;
 		crossprod[2] *= invlength;

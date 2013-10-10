@@ -55,7 +55,7 @@ void main()
 	
 	vec2 uv = position.xy;
 	float bump = texture(heightTexture,  texCoords).x;
-	output.position = position-normal*(bump-0.5)*tessScale;
-	output.normal = normal;//*texture(normalTexture,  texCoords).xyz;//*normalFromHeightMap(heightTexture, uv).xyz;
+	output.position = position-normal*(bump-0.5)*tessScale*0.01;
+	output.normal = normal*texture(normalTexture,  texCoords).xyz;//*normalFromHeightMap(heightTexture, uv).xyz;
 	output.texCoords = texCoords;
 }

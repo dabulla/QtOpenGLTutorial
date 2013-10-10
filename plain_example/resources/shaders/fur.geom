@@ -8,6 +8,7 @@ layout(invocations = 8) in;
 in rawVertex {
     vec3 position;
     vec3 normal;
+    vec2 texCoords;
 } input[3];
 
 //structure MUST have the same name as in the fragment shader (and the same attributes)
@@ -41,7 +42,7 @@ void main()
 //	{
 		for (int i = 0; i < gl_in.length(); i++)
 		{
-			vec4 transformedPosition = ModelViewProjectionMatrix*vec4(input[i].position-input[i].normal*explosionFactor*float(renderPass), 1.0f);
+			vec4 transformedPosition = ModelViewProjectionMatrix*vec4(input[i].position+input[i].normal*explosionFactor*float(renderPass), 1.0f);
 			output.worldPosition = ModelMatrix*vec4(input[i].position, 1.0f);
 			output.worldNormal = ModelNormalMatrix*input[i].normal;
 			output.position = ModelViewMatrix*vec4(input[i].position, 1.0f);

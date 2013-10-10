@@ -33,6 +33,9 @@ public:
     Q_INVOKABLE void setCamerModeWalkthrough();
     Q_INVOKABLE void setCamerModeObjectInspection();
 
+    Q_INVOKABLE void setObjectBunny();
+    Q_INVOKABLE void setObjectPlane();
+
     Q_INVOKABLE void setCullmodeBack();
     Q_INVOKABLE void setCullmodeFront();
     Q_INVOKABLE void setCullmodeBoth();

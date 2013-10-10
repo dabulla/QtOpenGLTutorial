@@ -19,6 +19,26 @@ Rectangle {
             uniforms: "phongUniforms"
         }
         ListElement {
+            text: "Textured Phong (Projection, SpecularMap)"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "textureProjectedPhongSpecular"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Textured Phong (SpecularMap)"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "texturePhongSpecular"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
             text: "Plain Phong"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
@@ -67,7 +87,7 @@ Rectangle {
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "texturePhong"
+            fragmentShaderProc: "texturePhongSpecular"
             uniforms: "phongUniforms"
         }
         ListElement {
@@ -125,12 +145,12 @@ Rectangle {
             step: 0.001
         }
         ListElement {
-            name: "Material Shininess"
+            name: "Material Shininess (log)"
             uniformName: "material.shininess"
             isVector: false
-            defaultValue: 100.0
+            defaultValue: 5.0
             minValue: 0
-            maxValue: 1000
+            maxValue: 10
             step: 0.01
         }
         ListElement {
@@ -234,10 +254,10 @@ Rectangle {
             uniformName: "tessScale"
             isVector: false
             isInt: false
-            defaultValue: 1
-            minValue: 0.01
-            maxValue: 10
-            step: 0.01
+            defaultValue: 0.01
+            minValue: 0
+            maxValue: 3
+            step: 0.0001
         }
     }
 
@@ -302,6 +322,37 @@ Rectangle {
                             if(checked) {
                                 console.log("camera: "+text);
                                 application.setCamerModeObjectInspection();
+                            }
+                        }
+                    }
+                }
+            }
+            GroupBox {
+                id: objectGroupBox
+                title: "Object"
+                ExclusiveGroup { id: currentObject }
+                ColumnLayout {
+                    RadioButton {
+                        id: bunnyRadio
+                        text: "Bunny"
+                        exclusiveGroup: currentObject
+                        checked: true
+                        onCheckedChanged: {
+                            if(checked) {
+                                console.log("object: "+text);
+                                application.setObjectBunny();
+                            }
+                        }
+                    }
+
+                    RadioButton {
+                        id: planeRadio
+                        text: "Plane"
+                        exclusiveGroup: currentObject
+                        onCheckedChanged: {
+                            if(checked) {
+                                console.log("object: "+text);
+                                application.setObjectPlane();
                             }
                         }
                     }
@@ -397,6 +448,7 @@ Rectangle {
                             id: linkedCb
                             text: "fix"
                             visible: isVector
+                            checked: true
                         }
                     }
                     Slider {

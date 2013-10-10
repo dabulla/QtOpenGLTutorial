@@ -82,6 +82,17 @@ Q_INVOKABLE void Mediator::setCamerModeObjectInspection()
 {
 	m_scene->setCamerModeObjectInspection();
 }
+
+Q_INVOKABLE void Mediator::setObjectBunny()
+{
+	m_scene->setObjectBunny();
+}
+
+Q_INVOKABLE void Mediator::setObjectPlane()
+{
+	m_scene->setObjectPlane();
+}
+
 Q_INVOKABLE void Mediator::setCullmodeBack()
 {
 	m_scene->setGlCullMode(GL_BACK);

@@ -60,6 +60,9 @@ public:
 	
 	virtual void setCamerModeWalkthrough() { m_cameraMode = CAMERMODE_WALKTHROUGH;}
 	virtual void setCamerModeObjectInspection() { m_cameraMode = CAMERMODE_OBJECTINSPECTION;}
+	
+	virtual void setObjectBunny() { m_currentObject = OBJECT_BUNNY;}
+	virtual void setObjectPlane() { m_currentObject = OBJECT_QUAD;}
 
     // Camera motion control
     void setSideSpeed( float vx ) { m_v.setX( vx ); }
@@ -120,9 +123,7 @@ private:
     QMatrix4x4 m_viewMatrix;
     QMatrix4x4 m_projectionMatrix;
     QMatrix4x4 m_viewProjectionMatrix;
-
-	float m_lightTheta;
-
+	
 	bool m_isInitialized;
 	ShaderInfo m_shaderInfo;
 	QOpenGLDebugLogger m_logger;
@@ -144,6 +145,7 @@ private:
 
 	QOpenGLBuffer m_positionBuffer;
 	QOpenGLBuffer m_normalsBuffer;
+	QOpenGLBuffer m_texCoordsBuffer;
 	QOpenGLBuffer m_indexBuffer;
 
     unsigned int  m_elementCount;

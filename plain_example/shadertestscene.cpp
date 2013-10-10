@@ -28,6 +28,7 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_tiltAngle( 0.0f ),
       m_positionBuffer( QOpenGLBuffer::VertexBuffer ),
       m_normalsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_texCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
       m_indexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_quadPositionBuffer( QOpenGLBuffer::VertexBuffer ),
       m_quadNormalsBuffer( QOpenGLBuffer::VertexBuffer ),
@@ -41,7 +42,7 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
 	  m_material( 0 ),
 	  m_isInitialized(false),
 	  m_cameraMode(CameraMode::CAMERMODE_WALKTHROUGH),
-	  m_currentObject(CurrentObject::OBJECT_QUAD),
+	  m_currentObject(CurrentObject::OBJECT_BUNNY),
 	  m_glCullMode(GL_BACK),
 	  m_rotationSpeed(0.0f),
 	  m_position( -1.3f, 1.5f, 2.0f ),
@@ -240,12 +241,7 @@ void ShaderTestScene::passUniforms()
     shader->setUniformValue( "ModelNormalMatrix", worldNormalMatrix );
     shader->setUniformValue( "NormalMatrix", normalMatrix );
     shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
-
-	QVector4D worldLightDirection( sinf( m_lightTheta * degToRad )*50.f, cosf( m_lightTheta * degToRad )*50.f, 0.0f, 0.0f );
-	//QMatrix4x4 worldToEyeNormal( (m_camera->viewMatrix() * m_modelMatrix).normalMatrix() );
-	QVector4D lightDirection = (m_viewMatrix * m_modelMatrix) * worldLightDirection;
-	shader->setUniformValue( "light.position", lightDirection );
-
+	
 	// Set the active Shader subroutine
 	// Subroutines are functions in the shader. They can be set almost in the same way as other uniform values
 	// In contrast to other uniform types (e.g. "float"), the possible values of a subroutine variable are defined in the shader itself (e.g. "applyPhongLighting()", "applyFlatLighting()")
@@ -310,7 +306,7 @@ void ShaderTestScene::resize( int w, int h )
 	m_projectionMatrix.setToIdentity();
     m_projectionMatrix.perspective( fieldOfView, aspectRatio, nearPlane, farPlane );
 
-	//TODO: remove in simplke example?!
+	//TODO: remove in simple example?!
     // Update the viewport matrix
     float w2 = w / 2.0f;
     float h2 = h / 2.0f;
@@ -341,15 +337,6 @@ void ShaderTestScene::translate( const QVector3D& vLocal)
     m_position += vWorld;
     // Also update the view center coordinates
     m_viewCenter += vWorld;
-    //m_cameraToCenter = m_viewCenter - m_position;
-    // Calculate a new up vector. We do this by:
-    // 1) Calculate a new local x-direction vector from the cross product of the new
-    //    camera to view center vector and the old up vector.
-    // 2) The local x vector is the normal to the plane in which the new up vector
-    //    must lay. So we can take the cross product of this normal and the new
-    //    x vector. The new normal vector forms the last part of the orthonormal basis
-    //x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
-    //m_upVector = QVector3D::crossProduct( x, m_cameraToCenter ).normalized();
 }
 
 void ShaderTestScene::pan( const float &angle )
@@ -446,21 +433,6 @@ void ShaderTestScene::prepareShaders()
 
 void ShaderTestScene::prepareTextures()
 {
-    //SamplerPtr sampler( new Sampler );
-    //sampler->create();
-    //sampler->setMinificationFilter( GL_LINEAR );
-    //sampler->setMagnificationFilter( GL_LINEAR );
-    //sampler->setWrapMode( Sampler::DirectionS, GL_CLAMP_TO_EDGE );
-    //sampler->setWrapMode( Sampler::DirectionT, GL_CLAMP_TO_EDGE );
-
-    //QImage heightMapImage( "./resources/textures/grass.png" );
-    //m_funcs->glActiveTexture( GL_TEXTURE0 );
-    //TexturePtr heightMap( new Texture );
-    //heightMap->create();
-    //heightMap->bind();
-    //heightMap->setImage( heightMapImage );
-    //m_material->setTextureUnitConfiguration( 0, heightMap, sampler, QByteArrayLiteral( "heightMap" ) );
-
     SamplerPtr tilingSampler( new Sampler );
     tilingSampler->create();
     tilingSampler->setMinificationFilter( GL_LINEAR_MIPMAP_LINEAR );
@@ -469,7 +441,6 @@ void ShaderTestScene::prepareTextures()
     tilingSampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
     tilingSampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
 
-    //QImage grassImage( "./resources/textures/grass.png" );
 	QImage diffuseImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/diffus.png" );
     m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr diffuseTexture( new Texture );
@@ -479,7 +450,6 @@ void ShaderTestScene::prepareTextures()
     diffuseTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 1, diffuseTexture, tilingSampler, QByteArrayLiteral( "diffuseTexture" ) );
 
-    //QImage rockImage( "./resources/textures/rock.png" );
 	QImage heightImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/height.png" );
     m_funcs->glActiveTexture( GL_TEXTURE1 );
     TexturePtr heightTexture( new Texture );
@@ -489,7 +459,6 @@ void ShaderTestScene::prepareTextures()
     heightTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 2, heightTexture, tilingSampler, QByteArrayLiteral( "heightTexture" ) );
 
-    //QImage snowImage( "./resources/textures/snowrocks.png" );
 	QImage normalImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/normal.png" );
     m_funcs->glActiveTexture( GL_TEXTURE2 );
     TexturePtr normalTexture( new Texture );
@@ -522,21 +491,11 @@ void ShaderTestScene::prepareTextures()
 
 void ShaderTestScene::prepareVertexBuffers()
 {
-	//QFile file("shaders/truhe.obj");
-	//QFile file("resources/objects/bunny.obj3d");
-	//QFile file("resources/objects/san-miguel.obj");
-	LoaderObj loader = LoaderObj("resources/objects/bunny.obj3d");
+	LoaderObj loader = LoaderObj("resources/objects/bunny.obj");
 	//LoaderObj loader = LoaderObj("resources/objects/san-miguel.obj");
 	//LoaderObj loader = LoaderObj("resources/objects/crytek-sponza/sponza.obj");
 	m_elementCount = loader.getIndexCount();
 	m_vertexCount = loader.getVertexCount();
-	
-    m_normalsBuffer.create();
-    m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_normalsBuffer.bind();
-	GLfloat *pB = loader.getCalculatedNormals();
-	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) ); //TODO: Kommentar (GPU)
-    m_normalsBuffer.release();
 
     m_positionBuffer.create();
     m_positionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
@@ -545,14 +504,26 @@ void ShaderTestScene::prepareVertexBuffers()
 	m_positionBuffer.allocate( pVB, m_vertexCount*3*sizeof(GLfloat) );
     m_positionBuffer.release();
 	
+    m_normalsBuffer.create();
+    m_normalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_normalsBuffer.bind();
+	GLfloat *pB = loader.getCalculatedNormals();
+	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) ); //TODO: Kommentar (GPU)
+    m_normalsBuffer.release();
+	
+    m_texCoordsBuffer.create();
+    m_texCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_texCoordsBuffer.bind();
+	GLfloat *pTC = loader.getCalculatedTexCoords();
+	m_texCoordsBuffer.allocate(pTC, loader.getVertexCount()*2*sizeof(GLfloat) );
+    m_texCoordsBuffer.release();
+	
     m_indexBuffer.create();
     m_indexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_indexBuffer.bind();
 	GLuint *pIB = loader.getIB();
 	m_indexBuffer.allocate( pIB, loader.getIndexCount()*sizeof(GLuint) );
     m_indexBuffer.release();
-
-	//genNormalsGPU();
 
     m_vaoBunny.create();
     {
@@ -568,21 +539,29 @@ void ShaderTestScene::prepareVertexBuffers()
 		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Normal" );
 
+        m_texCoordsBuffer.bind();
+		shader->setAttributeBuffer("in_TexCoords", GL_FLOAT, 0, 2, 2*sizeof(float));
+        shader->enableAttributeArray( "in_TexCoords" );
+
 		m_indexBuffer.bind();
     }
 	//After using the vao, resources must be released
     m_material->shader()->release();
     m_positionBuffer.release();
     m_normalsBuffer.release();
+    m_texCoordsBuffer.release();
     m_indexBuffer.release();
 
 
 	//The same for a quad object
-	const float quadVertexPositions[] = { -1.f,-1.f,0.f, 
-									1.f,-1.f,0.f,
-									1.f, 1.f,0.f,
-								   -1.f, 1.f,0.f};
+	// Use 0.1 to adapt scaling of bunny.obj (a squad of size 2x2 units would be too large)
+	const float quadVertexPositions[] = { -0.1f,-0.1f,0.f, 
+									0.1f,-0.1f,0.f,
+									0.1f, 0.1f,0.f,
+								   -0.1f, 0.1f,0.f};
+
 	const int quadIndices[] = {0,1,2,0,2,3};
+
 	const float quadNormals[] = {   0.f,0.f,1.f, 
 									0.f,0.f,1.f,
 									0.f,0.f,1.f,
@@ -652,14 +631,7 @@ void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)
 	qDebug() << "Set Uniform " << name << ": " << val;
 	QOpenGLShaderProgramPtr shader = m_material->shader();
 	shader->bind();
-
-    // Set the lighting parameters
-	if(QString(name) == QString("lightTheta"))
-	{
-		m_lightTheta = val;
-	} else {
-		shader->setUniformValue( name, val );
-	}
+	shader->setUniformValue( name, val );
 	shader->release();
 }
 
