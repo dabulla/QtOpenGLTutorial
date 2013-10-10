@@ -70,7 +70,7 @@ LoaderObj::LoaderObj(const char* fileName):
 				break;
 			case 't':
 				//Create new UV
-				sscanf(pszBuff, "vt %f %f", &texcoord.u, &texcoord.v);
+				sscanf_s(pszBuff, "vt %f %f", &texcoord.u, &texcoord.v);
 				texcoords.push_back(texcoord);
 				++m_texCount;
 				break;

@@ -28,9 +28,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Dateien\libobj">
-      <UniqueIdentifier>{57f07313-503b-4f74-9578-f74080fce534}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Dateien\libobj">
       <UniqueIdentifier>{e90dce75-cff6-4975-886e-062304d65122}</UniqueIdentifier>
     </Filter>
@@ -91,15 +88,6 @@
       <Filter>Generierte Dateien\Release</Filter>
     </ClCompile>
     <ClCompile Include="shadertestscene.cpp">
-      <Filter>Source Dateien</Filter>
-    </ClCompile>
-    <ClCompile Include="obj-0.1\obj\obj.cpp">
-      <Filter>Source Dateien\libobj</Filter>
-    </ClCompile>
-    <ClCompile Include="obj-0.1\obj\obj_parser.cpp">
-      <Filter>Source Dateien\libobj</Filter>
-    </ClCompile>
-    <ClCompile Include="LoaderObjFast.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
     <ClCompile Include="LoaderObj.cpp">
