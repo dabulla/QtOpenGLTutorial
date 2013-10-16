@@ -67,7 +67,7 @@ Rectangle {
             geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "texturePhongSpecular"
+            fragmentShaderProc: "bumpyPhong"
             uniforms: "phongUniforms"
         }
         ListElement {
@@ -82,6 +82,16 @@ Rectangle {
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
             fragmentShaderProc: "showNormals"
+            uniforms: "phongUniforms"
+        }
+        ListElement {
+            text: "Show Tangent Space"
+            vertexShaderFile: "resources/shaders/passthrough.vert"
+            vertexShaderProc: ""
+            geometryShaderFile: "resources/shaders/showTangentSpace.geom"
+            geometryShaderProc: ""
+            fragmentShaderFile: "resources/shaders/phong.frag"
+            fragmentShaderProc: "plainPhong"
             uniforms: "phongUniforms"
         }
     }
@@ -127,8 +137,8 @@ Rectangle {
             uniformName: "light.position"
             isVector: true
             defaultValue: 30.0
-            minValue: -50
-            maxValue: 50
+            minValue: -5
+            maxValue: 5
             step: 0.001
         }
         ListElement {
@@ -244,6 +254,16 @@ Rectangle {
             defaultValue: 0.01
             minValue: 0
             maxValue: 3
+            step: 0.0001
+        }
+        ListElement {
+            name: "Bump normal influence"
+            uniformName: "bumpFactor"
+            isVector: false
+            isInt: false
+            defaultValue: 0.01
+            minValue: 0
+            maxValue: 2
             step: 0.0001
         }
     }

@@ -1,6 +1,7 @@
 #ifndef SHADERTESTSCENE_H
 #define SHADERTESTSCENE_H
 
+#include <vld.h>
 #include "abstractscene.h"
 #include "material.h"
 
@@ -63,7 +64,7 @@ public:
 	virtual void setCamerModeObjectInspection() { m_cameraMode = CAMERMODE_OBJECTINSPECTION;}
 	
 	virtual void setObjectBunny() { m_currentObject = OBJECT_BUNNY;}
-	virtual void setObjectPlane() { m_currentObject = OBJECT_QUAD;}
+	virtual void setObjectPlane() { m_currentObject = OBJECT_PLANE;}
 
     // Camera motion control
     void moveSide( float x ) { m_offset.setX( m_offset.x() + x ); }
@@ -85,7 +86,7 @@ public:
 
 	enum CurrentObject {
 		OBJECT_BUNNY,
-		OBJECT_QUAD
+		OBJECT_PLANE
 	};
 
 
@@ -166,20 +167,20 @@ private:
 	unsigned int m_vertexCount;
 	
 	// All members used for plane object
-	const unsigned int m_planeResolutionX = 8;
-	const unsigned int m_planeResolutionZ = 8;
+	const unsigned int m_planeResolutionX;
+	const unsigned int m_planeResolutionZ;
 
-    QOpenGLVertexArrayObject m_vaoQuad;
+    QOpenGLVertexArrayObject m_vaoPlane;
 
-	QOpenGLBuffer m_quadPositionBuffer;
-	QOpenGLBuffer m_quadNormalsBuffer;
-	QOpenGLBuffer m_quadTangentsBuffer;
-	QOpenGLBuffer m_quadBitangentsBuffer;
-	QOpenGLBuffer m_quadTexCoordsBuffer;
-	QOpenGLBuffer m_quadIndexBuffer;
+	QOpenGLBuffer m_planePositionBuffer;
+	QOpenGLBuffer m_planeNormalsBuffer;
+	QOpenGLBuffer m_planeTangentsBuffer;
+	QOpenGLBuffer m_planeBitangentsBuffer;
+	QOpenGLBuffer m_planeTexCoordsBuffer;
+	QOpenGLBuffer m_planeIndexBuffer;
 	
-    const unsigned int  m_quadElementCount = m_planeResolutionX*m_planeResolutionZ;
-	const unsigned int m_quadVertexCount = (m_planeResolutionX-1)*(m_planeResolutionZ-1)*2; // For each Vertex there will be two triangles, except the last row and column of the plane.
+    const unsigned int  m_planeElementCount;
+	const unsigned int m_planeVertexCount;
 
 	// Not used yet. This would be important for adaptive tesselation
     float m_screenSpaceError;

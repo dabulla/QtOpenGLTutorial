@@ -92,9 +92,9 @@ void main()
 	scaledNormal[2] *= explosionFactor;
 
 	vec4 transformedPosition[3];
-	transformedPosition[0] = ModelViewProjectionMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
-	transformedPosition[1] = ModelViewProjectionMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
-	transformedPosition[2] = ModelViewProjectionMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
+	transformedPosition[0] = ModelViewProjectionMatrix*vec4(input[0].position+scaledNormal[0], 1.0f);
+	transformedPosition[1] = ModelViewProjectionMatrix*vec4(input[1].position+scaledNormal[1], 1.0f);
+	transformedPosition[2] = ModelViewProjectionMatrix*vec4(input[2].position+scaledNormal[2], 1.0f);
 
 	vec4 worldPosition[3];
 	if(doWiggle)
@@ -132,8 +132,8 @@ void main()
 	output.normal = NormalMatrix*normal[0];
 	output.alpha = 1.0f;
     output.texCoords = input[0].texCoords;
-    output.tangent = ModelNormalMatrix*input[0].tangent;
-    output.bitangent = ModelNormalMatrix*input[0].bitangent;
+    output.tangent = NormalMatrix*input[0].tangent;
+    output.bitangent = NormalMatrix*input[0].bitangent;
 	gl_Position = transformedPosition[0];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, hb, 0.f );
@@ -143,8 +143,8 @@ void main()
 	output.normal = NormalMatrix*normal[1];
 	output.alpha = 1.0f;
     output.texCoords = input[1].texCoords;
-    output.tangent = ModelNormalMatrix*input[1].tangent;
-    output.bitangent = ModelNormalMatrix*input[1].bitangent;
+    output.tangent = NormalMatrix*input[1].tangent;
+    output.bitangent = NormalMatrix*input[1].bitangent;
 	gl_Position = transformedPosition[1];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, 0.f, hc );
@@ -154,8 +154,8 @@ void main()
 	output.normal = NormalMatrix*normal[2];
 	output.alpha = 1.0f;
     output.texCoords = input[2].texCoords;
-    output.tangent = ModelNormalMatrix*input[2].tangent;
-    output.bitangent = ModelNormalMatrix*input[2].bitangent;
+    output.tangent = NormalMatrix*input[2].tangent;
+    output.bitangent = NormalMatrix*input[2].bitangent;
 	gl_Position = transformedPosition[2];
 	EmitVertex();
     // Finish the primitive off

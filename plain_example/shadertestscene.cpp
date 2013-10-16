@@ -30,12 +30,12 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_bitangentsBuffer( QOpenGLBuffer::VertexBuffer ),
 	  m_texCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
       m_indexBuffer( QOpenGLBuffer::IndexBuffer ),
-      m_quadPositionBuffer( QOpenGLBuffer::VertexBuffer ),
-      m_quadNormalsBuffer( QOpenGLBuffer::VertexBuffer ),
-	  m_quadTangentsBuffer( QOpenGLBuffer::VertexBuffer ),
-	  m_quadBitangentsBuffer( QOpenGLBuffer::VertexBuffer ),
-	  m_quadTexCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
-      m_quadIndexBuffer( QOpenGLBuffer::IndexBuffer ),
+      m_planePositionBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_planeNormalsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_planeTangentsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_planeBitangentsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_planeTexCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_planeIndexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_screenSpaceError( 12.0f ),
       m_modelMatrix(),
       m_time( 0.0f ),
@@ -43,7 +43,7 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
       m_funcs( 0 ),
 	  m_material( 0 ),
 	  m_isInitialized(false),
-	  m_cameraMode(CameraMode::CAMERMODE_WALKTHROUGH),
+	  m_cameraMode(CameraMode::CAMERMODE_OBJECTINSPECTION),
 	  m_currentObject(CurrentObject::OBJECT_BUNNY),
 	  m_glCullMode(GL_BACK),
 	  m_rotationSpeed(0.0f),
@@ -51,7 +51,11 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
 	  m_viewCenter( 0.0f, 1.1f, 0.0f ),
 	  m_upVector(0.0f, 1.0f, 0.0f ),
 	  m_cameraToCenter(m_viewCenter-m_position),
-	  m_tilingSamplerId(0)
+	  m_tilingSamplerId(0),
+	  m_planeResolutionX(8),
+	  m_planeResolutionZ(8),
+	  m_planeVertexCount(m_planeResolutionX*m_planeResolutionZ),
+	  m_planeElementCount((m_planeResolutionX-1)*(m_planeResolutionZ-1)*2*3) // For each Vertex there will be two triangles, except the last row and column of the plane.
 {
 }
 
@@ -204,9 +208,9 @@ void ShaderTestScene::render()
 		elementCount = m_elementCount;
 		vao = &m_vaoBunny;
 		break;
-	case CurrentObject::OBJECT_QUAD:
-		elementCount = 6;
-		vao = &m_vaoQuad;
+	case CurrentObject::OBJECT_PLANE:
+		elementCount = m_planeElementCount;
+		vao = &m_vaoPlane;
 		break;
 	}
 	// Binder class calls m_vao.bind() in it's constructor and m_vao.release() in the destructor.
@@ -593,144 +597,177 @@ void ShaderTestScene::prepareVertexBuffers()
     }
 	//TODO: think over these release()s
 	//After using the vao, resources must be released
-    m_material->shader()->release();
-    m_positionBuffer.release();
-    m_normalsBuffer.release();
-	m_tangentsBuffer.release();
-	m_bitangentsBuffer.release();
-    m_texCoordsBuffer.release();
-    m_indexBuffer.release();
+ //   m_material->shader()->release();
+ //   m_positionBuffer.release();
+ //   m_normalsBuffer.release();
+	//m_tangentsBuffer.release();
+	//m_bitangentsBuffer.release();
+ //   m_texCoordsBuffer.release();
+ //   m_indexBuffer.release();
 
 
-	const float planeSizeX = 2.f;
-	const float planeSizeZ = 2.f;
+	const float planeSizeX = 1.f;
+	const float planeSizeZ = 1.f;
+	const float planeTexRepeatX = 1.f;
+	const float planeTexRepeatZ = 1.f;
 
-	float planeVertexPositions[m_quadVertexCount*3];
-	int planeIndices[m_quadElementCount*3]; 
-
-	for(int ix=0 ; ix<m_planeResolutionX ; ++ix)
+	float *planeVertexPositions = new float[m_planeVertexCount*3];
+	float *planeVertexNormals = new float[m_planeVertexCount*3];
+	float *planeVertexTangents = new float[m_planeVertexCount*3];
+	float *planeVertexBitangents = new float[m_planeVertexCount*3];
+	float *planeVertexTexCoords = new float[m_planeVertexCount*2];
+	int *planeIndices = new int[m_planeElementCount]; 
+	
+	const float texFactorX = 1.f/(float)m_planeResolutionX*planeTexRepeatX;
+	const float texFactorZ = 1.f/(float)m_planeResolutionZ*planeTexRepeatZ;
+	const float posFactorX = 1.f/(float)m_planeResolutionX*planeSizeX;
+	const float posFactorZ = 1.f/(float)m_planeResolutionZ*planeSizeZ;
+	for(unsigned int ix=0 ; ix<m_planeResolutionX ; ++ix)
 	{
-		float posX = ((float)ix/(float)m_planeResolutionX)*planeSizeX-(planeSizeX*0.5);
-		for(int iz=0 ; iz<m_planeResolutionZ ; ++iz)
+		float posX = ((float)ix)*posFactorX-(planeSizeX*0.5);
+		float texX = ((float)ix)*texFactorX;
+		for(unsigned int iz=0 ; iz<m_planeResolutionZ ; ++iz)
 		{
 			unsigned int idx = ix*m_planeResolutionX+iz;
-			float posZ = ((float)iz/(float)m_planeResolutionZ)*planeSizeZ-(planeSizeZ*0.5);
-			planeVertexPositions[idx] = posX;
-			planeVertexPositions[idx+1] = 0.f;
-			planeVertexPositions[idx+2] = posZ;
-
-			if (ix > 0 && iz > 0) {
-				//construct indices for two clockwise triangles
-				unsigned int idxIndex = idx*2*3;
-				planeIndices[idxIndex] = idx - 1 - m_planeResolutionX;
-				planeIndices[idxIndex+1] = idx - m_planeResolutionX;
-				planeIndices[idxIndex+2] = idx - 1;
-
-				planeIndices[idxIndex+3] = idx;
-				planeIndices[idxIndex+4] = idx - 1;
-				planeIndices[idxIndex+5] = idx - m_planeResolutionX;
+			unsigned int idxx3 = idx*3;
+			
+			if(idx*2+1>=m_planeVertexCount*2)
+			{
+				qCritical() << "Array access out of bounds";
+				exit(1);
 			}
+			if(idxx3+2>=m_planeVertexCount*3)
+			{
+				qCritical() << "Array access out of bounds";
+				exit(1);
+			}
+			planeVertexPositions[idxx3] = posX;
+			planeVertexPositions[idxx3+1] = 0.f;
+			planeVertexPositions[idxx3+2] = ((float)iz)*posFactorZ-(planeSizeZ*0.5);
+
+			planeVertexNormals[idxx3] =   0.f;
+			planeVertexNormals[idxx3+1] = 1.f;
+			planeVertexNormals[idxx3+2] = 0.f;
+
+			planeVertexTangents[idxx3] =   1.f;
+			planeVertexTangents[idxx3+1] = 0.f;
+			planeVertexTangents[idxx3+2] = 0.f;
+
+			planeVertexBitangents[idxx3] =   0.f;
+			planeVertexBitangents[idxx3+1] = 0.f;
+			planeVertexBitangents[idxx3+2] = 1.f;
+
+			planeVertexTexCoords[idx*2] =   texX;
+			planeVertexTexCoords[idx*2+1] = ((float)iz)*texFactorZ;
 		}
 	}
-	//The same for a quad object
-	// Use 0.1 to adapt scaling of bunny.obj (a squad of size 2x2 units would be too large)
-	const float quadVertexPositions[] = { -0.1f,-0.1f,0.f, 
-									0.1f,-0.1f,0.f,
-									0.1f, 0.1f,0.f,
-								   -0.1f, 0.1f,0.f};
+	for(unsigned int ix=0 ; ix<m_planeResolutionX-1 ; ++ix)
+	{
+		for(unsigned int iz=0 ; iz<m_planeResolutionZ-1 ; ++iz)
+		{
+			//construct indices for two counterclockwise triangles
+			unsigned int idxIndex = (ix*(m_planeResolutionX-1)+iz)*3*2;
+			unsigned int idxVert = ix*m_planeResolutionX+iz;
+			
+			if(idxIndex+5>=m_planeElementCount)
+			{
+				qCritical() << "Array access out of bounds";
+				exit(1);
+			}
+			planeIndices[idxIndex] =   idxVert;
+			planeIndices[idxIndex+1] = idxVert + 1;
+			planeIndices[idxIndex+2] = idxVert + 1 + m_planeResolutionX;
 
-	const int quadIndices[] = {0,1,2,0,2,3};
+			planeIndices[idxIndex+3] = idxVert;
+			planeIndices[idxIndex+4] = idxVert + 1 + m_planeResolutionX;
+			planeIndices[idxIndex+5] = idxVert + m_planeResolutionX;
+		}
+	}
+	//The same for a plane object
 
-	const float quadNormals[] = {   0.f,0.f,1.f, 
-									0.f,0.f,1.f,
-									0.f,0.f,1.f,
-									0.f,0.f,1.f};
-
-	const float quadTangents[] = {   0.f,1.f,0.f, 
-									0.f,1.f,0.f,
-									0.f,1.f,0.f,
-									0.f,1.f,0.f};
-
-	const float quadBitangents[] = {   1.f,0.f,0.f, 
-									1.f,0.f,0.f,
-									1.f,0.f,0.f,
-									1.f,0.f,0.f};
-
-	const float quadTexCoords[] = { 0.f, 0.f, 
-									0.2f, 0.f,
-									0.2f, 0.2f,
-									0.f, 0.2f};
+    m_planePositionBuffer.create();
+    m_planePositionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planePositionBuffer.bind();
+	m_planePositionBuffer.allocate( planeVertexPositions, m_planeVertexCount*3*sizeof(GLfloat) ); // 4 Vertices for the plane, 3 components per vertex (x,y,z)
+    m_planePositionBuffer.release();
 	
-    m_quadPositionBuffer.create();
-    m_quadPositionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadPositionBuffer.bind();
-	m_quadPositionBuffer.allocate( quadVertexPositions, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
-    m_quadPositionBuffer.release();
+    m_planeIndexBuffer.create();
+    m_planeIndexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planeIndexBuffer.bind();
+	m_planeIndexBuffer.allocate( planeIndices, m_planeElementCount*sizeof(GLuint) ); // 2Faces*3VertexIndices
+    m_planeIndexBuffer.release();
+
+    m_planeNormalsBuffer.create();
+    m_planeNormalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planeNormalsBuffer.bind();
+	m_planeNormalsBuffer.allocate(planeVertexNormals, m_planeVertexCount*3*sizeof(GLfloat) ); // 4 Vertices for the plane, 3 components per vertex (x,y,z)
+    m_planeNormalsBuffer.release();
+
+    m_planeTangentsBuffer.create();
+    m_planeTangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planeTangentsBuffer.bind();
+	m_planeTangentsBuffer.allocate(planeVertexTangents, m_planeVertexCount*3*sizeof(GLfloat) ); // 4 Vertices for the plane, 3 components per vertex (x,y,z)
+    m_planeTangentsBuffer.release();
+
+    m_planeBitangentsBuffer.create();
+    m_planeBitangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planeBitangentsBuffer.bind();
+	m_planeBitangentsBuffer.allocate(planeVertexBitangents, m_planeVertexCount*3*sizeof(GLfloat) ); // 4 Vertices for the plane, 3 components per vertex (x,y,z)
+    m_planeBitangentsBuffer.release();
+
+    m_planeTexCoordsBuffer.create();
+    m_planeTexCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_planeTexCoordsBuffer.bind();
+	m_planeTexCoordsBuffer.allocate(planeVertexTexCoords, m_planeVertexCount*2*sizeof(GLfloat) ); // 4 Vertices for the plane, 2 components per vertex (u, v)
+    m_planeTexCoordsBuffer.release();
 	
-    m_quadIndexBuffer.create();
-    m_quadIndexBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadIndexBuffer.bind();
-	m_quadIndexBuffer.allocate( quadIndices, 2*3*sizeof(GLuint) ); // 2Faces*3VertexIndices
-    m_quadIndexBuffer.release();
+	delete [] planeVertexPositions;
+	delete [] planeVertexNormals;
+	delete [] planeVertexTangents;
+	delete [] planeVertexBitangents;
+	delete [] planeVertexTexCoords;
+	delete [] planeIndices; 
 
-    m_quadNormalsBuffer.create();
-    m_quadNormalsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadNormalsBuffer.bind();
-	m_quadNormalsBuffer.allocate(quadNormals, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
-    m_quadNormalsBuffer.release();
-
-    m_quadTangentsBuffer.create();
-    m_quadTangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadTangentsBuffer.bind();
-	m_quadTangentsBuffer.allocate(quadTangents, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
-    m_quadTangentsBuffer.release();
-
-    m_quadBitangentsBuffer.create();
-    m_quadBitangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadBitangentsBuffer.bind();
-	m_quadBitangentsBuffer.allocate(quadBitangents, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
-    m_quadBitangentsBuffer.release();
-
-    m_quadTexCoordsBuffer.create();
-    m_quadTexCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-    m_quadTexCoordsBuffer.bind();
-	m_quadTexCoordsBuffer.allocate(quadTexCoords, 4*2*sizeof(GLfloat) ); // 4 Vertices for the quad, 2 components per vertex (u, v)
-    m_quadTexCoordsBuffer.release();
-	
-    m_vaoQuad.create();
+    m_vaoPlane.create();
     {
-        QOpenGLVertexArrayObject::Binder binder( &m_vaoQuad );
+        QOpenGLVertexArrayObject::Binder binder( &m_vaoPlane );
 		QOpenGLShaderProgramPtr shader = m_material->shader();
         shader->bind();
-        m_quadPositionBuffer.bind();
+        m_planePositionBuffer.bind();
 		shader->setAttributeBuffer("in_Position", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Position" );
 
-        m_quadNormalsBuffer.bind();
+        m_planeNormalsBuffer.bind();
 		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Normal" );
 
-        m_quadTangentsBuffer.bind();
+        m_planeTangentsBuffer.bind();
 		shader->setAttributeBuffer("in_Tangent", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Tangent" );
 
-        m_quadBitangentsBuffer.bind();
+        m_planeBitangentsBuffer.bind();
 		shader->setAttributeBuffer("in_Bitangent", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Bitangent" );
 
-        m_quadTexCoordsBuffer.bind();
+        m_planeTexCoordsBuffer.bind();
 		shader->setAttributeBuffer("in_TexCoords", GL_FLOAT, 0, 2, 2*sizeof(float));
         shader->enableAttributeArray( "in_TexCoords" );
-		m_quadIndexBuffer.bind();
+		m_planeIndexBuffer.bind();
     }
-	//TODO: think over these release()s
-    m_material->shader()->release();
-    m_quadPositionBuffer.release();
-    m_quadNormalsBuffer.release();
-	m_quadTangentsBuffer.release();
-	m_quadBitangentsBuffer.release();
-	m_quadTexCoordsBuffer.release();
-    m_quadIndexBuffer.release();
+
+	//m_material->shader()->release();
+	//m_planePositionBuffer.release();
+	//m_planeNormalsBuffer.release();
+	//m_planeTangentsBuffer.release();
+	//m_planeBitangentsBuffer.release();
+	//m_planeTexCoordsBuffer.release();
+	//m_planeIndexBuffer.release();
+
+	//releasing the objects internally cause glBindXXX(0).
+	// we have to do this, because QtQuick wants a clean OpenGL state
+	m_funcs->glBindBuffer(GL_ARRAY_BUFFER, 0);
+	m_funcs->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	m_funcs->glUseProgram(0);
 }
 
 void ShaderTestScene::setShaderUniformValue(const char *name, const float &val)

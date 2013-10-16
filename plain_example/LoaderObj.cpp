@@ -169,11 +169,11 @@ LoaderObj::LoaderObj(const char* fileName):
 		// see wikipedia for more info http://de.wikipedia.org/wiki/Kugelkoordinaten
 		for(int i=m_vertexCount-1 ; i>=0 ; i--)
 		{
-			float x = m_vertices[i*3+0];
+			float x = m_vertices[i*3+0]; //translate center
 			float y = m_vertices[i*3+1];
 			float z = m_vertices[i*3+2];
 
-			float r = sqrtf(powf(x,2.f)+powf(y,2.f)+powf(z,2.f));
+			float r = sqrtf(powf(x,2.f)+powf(y,2.f)+powf(z,2.f))+0.01f;
 			float phi = atan2f(x, y);
 			float theta = acosf(z/r);
 			m_texCoords[i*2+0] = phi;
@@ -234,6 +234,7 @@ LoaderObj::LoaderObj(const char* fileName):
 		m_normals[i3*3+1] += crossprod[1];
 		m_normals[i3*3+2] += crossprod[2];
 
+		//TODO: This is wrong!
 		/// calculate tanget / bitangent ///
 		// use uv texture coordinates of the indexed vertices (construct pointers)
 		GLfloat* pUV1 = m_texCoords+i1*2;
