@@ -31,7 +31,7 @@ LoaderObj::LoaderObj(const char* fileName):
 	QTextStream stream(&file);
 	QList<VertexPos> vertices;
 	QList<VertexTex> texcoords;
-	int texCount;
+	//int texCount;
 	QList<int> indices;
 	QString allLines = stream.readAll();
 	QStringList all = allLines.split('\n', QString::SkipEmptyParts);

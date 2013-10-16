@@ -1,7 +1,6 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <sampler.h>
 #include <texture.h>
 
 #include <QMap>
@@ -11,24 +10,24 @@
 
 typedef QSharedPointer<QOpenGLShaderProgram> QOpenGLShaderProgramPtr;
 
-class TextureUnitConfiguration : public QPair<TexturePtr, SamplerPtr>
+class TextureUnitConfiguration : public QPair<TexturePtr, GLuint>
 {
 public:
     TextureUnitConfiguration()
-        : QPair<TexturePtr, SamplerPtr>( TexturePtr(), SamplerPtr() )
+        : QPair<TexturePtr, GLuint>( TexturePtr(), 0 )
     {
     }
 
-    explicit TextureUnitConfiguration( const TexturePtr& texture, const SamplerPtr& sampler )
-        : QPair<TexturePtr, SamplerPtr>( texture, sampler )
+    explicit TextureUnitConfiguration( const TexturePtr& texture, const GLuint& sampler )
+        : QPair<TexturePtr, GLuint>( texture, sampler )
     {
     }
 
     void setTexture( const TexturePtr& texture ) { first = texture; }
     TexturePtr texture() const { return first; }
 
-    void setSampler( const SamplerPtr sampler ) { second = sampler; }
-    SamplerPtr sampler() const { return second; }
+    void setSampler( const GLuint sampler ) { second = sampler; }
+    GLuint sampler() const { return second; }
 };
 
 class QOpenGLFunctions_4_2_Core;
@@ -57,8 +56,8 @@ public:
 
     QOpenGLShaderProgramPtr shader() const { return m_shader; }
 
-    void setTextureUnitConfiguration( GLuint unit, TexturePtr texture, SamplerPtr sampler );
-    void setTextureUnitConfiguration( GLuint unit, TexturePtr texture, SamplerPtr sampler, const QByteArray& uniformName );
+    void setTextureUnitConfiguration( GLuint unit, TexturePtr texture, GLuint sampler );
+    void setTextureUnitConfiguration( GLuint unit, TexturePtr texture, GLuint sampler, const QByteArray& uniformName );
     TextureUnitConfiguration textureUnitConfiguration( GLuint unit ) const;
 
 private:

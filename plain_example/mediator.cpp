@@ -4,12 +4,15 @@
 #include <qquickitem.h>
 #include <qqmlcontext.h>
 #include <qsurface.h>
+#include <qmap.h>
+#include <qstringlist.h>
 
 Mediator::Mediator(QObject *parent, ShaderTestScene *scene, Window *w)
 	: QObject(parent),
 	m_mainWnd(w),
 	m_scene(scene),
-	m_uiWnd(0)
+	m_uiWnd(0),
+	m_anisotropy(16.f)
 {
 	//Register the Mediator Class as a type usable in qml. This makes Q_PROPERTY work (setter, gett, propertychange...)
 	// Calling functions from qml works without this registration.
@@ -17,6 +20,28 @@ Mediator::Mediator(QObject *parent, ShaderTestScene *scene, Window *w)
 	// and do not want to instantiate the class in qml (We actually only spawn one object named "application" from window.cpp to qml).
 	// http://qt-project.org/doc/qt-5.0/qtqml/qtqml-cppintegration-definetypes.html
 	qmlRegisterUncreatableType<Mediator>("de.fhaachen", 1, 0, "ShaderTestSceneMediator", "Use the provided \"application\" object to communicate with cpp");
+	
+    m_texMinFilter.insert(tr("GL_NEAREST_MIPMAP_NEAREST"),       GL_NEAREST_MIPMAP_NEAREST         );
+    m_texMinFilter.insert(tr("GL_LINEAR_MIPMAP_NEAREST"),       GL_LINEAR_MIPMAP_NEAREST         );
+    m_texMinFilter.insert(tr("GL_NEAREST_MIPMAP_LINEAR"),       GL_NEAREST_MIPMAP_LINEAR         );
+    m_texMinFilter.insert(tr("GL_LINEAR_MIPMAP_LINEAR"),       GL_LINEAR_MIPMAP_LINEAR         );
+    m_texMinFilter.insert(tr("GL_NEAREST"),       GL_NEAREST         );
+    m_texMinFilter.insert(tr("GL_LINEAR"),       GL_LINEAR         );
+
+	QStringList stringListTexMinFilter;
+	for ( QMap<QString, GLuint>::iterator i = m_texMinFilter.begin(); i != m_texMinFilter.end() ; ++i) {
+		stringListTexMinFilter.append(i.key());
+	}
+	m_mainWnd->rootContext()->setContextProperty("appGlTexMinFilter", stringListTexMinFilter);
+
+    m_texMagFilter.insert(tr("GL_NEAREST"),       GL_NEAREST         );
+    m_texMagFilter.insert(tr("GL_LINEAR"),       GL_LINEAR         );
+	
+	QStringList stringListTexMagFilter;
+	for (QMap<QString, GLuint>::iterator i = m_texMagFilter.begin(); i != m_texMagFilter.end() ; ++i) {
+		stringListTexMagFilter.append(i.key());
+	}
+	m_mainWnd->rootContext()->setContextProperty("appGlTexMagFilter", stringListTexMagFilter);
 }
 
 Mediator::~Mediator()

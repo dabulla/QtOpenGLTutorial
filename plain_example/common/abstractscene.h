@@ -37,18 +37,6 @@ public:
       */
     virtual void resize( int w, int h ) = 0;
 
-	/**
-		Set a Shader uniform. The concrete scene must be able to call the correct glUniformxxx variable.
-		// eg. 
-		//TODO: datatypes for uniforms
-	*/
-	//virtual void setShaderUniformValue(const char *name, const float &val) = 0;
-	//virtual void setShaderUniformValue(const char *name, const int &val) = 0;
-	//virtual void setShaderUniformValue(const char *name, const float &x, const float &y, const float &z) = 0;
-	//
-	//virtual void setCamerModeWalkthrough() = 0;
-	//virtual void setCamerModeObjectInspection() = 0;
-
 protected:
     QOpenGLContext* m_context;
 };

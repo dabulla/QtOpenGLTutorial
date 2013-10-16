@@ -9,6 +9,8 @@ in rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } input[3];
 
 //structure MUST have the same name as in the fragment shader (and the same attributes)
@@ -20,6 +22,8 @@ out Vertex {
 	vec3 normal;
 	float alpha;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } output;
 
 uniform mat4 viewportMatrix;
@@ -30,17 +34,30 @@ uniform bool doSmooth;
 uniform bool explosionDoFaceScale;
 uniform float explosionFactor;
 
+uniform bool doWiggle;
+uniform float wiggleWavelen;
+uniform float wiggleAmp;
+
 uniform	mat3x3 NormalMatrix;
 uniform	mat3x3 ModelNormalMatrix;
 uniform	mat4x4 ModelMatrix;
 uniform	mat4x4 ModelViewMatrix;
 uniform	mat4x4 ModelViewProjectionMatrix;
 
+uniform float time;
+
 vec3 calcNormal(vec3 p1, vec3 p2, vec3 p3)
 {
     vec3 u = p1.xyz - p2.xyz;
     vec3 v = p3.xyz - p2.xyz;
     return normalize(cross(u, v));
+}
+
+void wiggle(inout vec4 position, inout vec3 normal, vec2 texcoord)
+{
+	position += vec4(normal*sin((texcoord.x+time)*wiggleWavelen)*wiggleAmp, 1.0f);
+	//todo: use tangent/bitangent
+	//normal += cos((texcoord.x+time)*wiggleWavelen)*wiggleAmp;
 }
 
 void main()
@@ -73,12 +90,18 @@ void main()
 	scaledNormal[0] *= explosionFactor;
 	scaledNormal[1] *= explosionFactor;
 	scaledNormal[2] *= explosionFactor;
-	
+
 	vec4 transformedPosition[3];
 	transformedPosition[0] = ModelViewProjectionMatrix*vec4(input[0].position-scaledNormal[0], 1.0f);
 	transformedPosition[1] = ModelViewProjectionMatrix*vec4(input[1].position-scaledNormal[1], 1.0f);
 	transformedPosition[2] = ModelViewProjectionMatrix*vec4(input[2].position-scaledNormal[2], 1.0f);
-	
+
+	vec4 worldPosition[3];
+	if(doWiggle)
+	{
+		wiggle(transformedPosition[0], scaledNormal[0], input[0].texCoords); 
+	}
+
     // Transform each vertex into viewport space
     vec2 p0 = vec2( viewportMatrix * ( transformedPosition[0] / transformedPosition[0].w ) );
     vec2 p1 = vec2( viewportMatrix * ( transformedPosition[1] / transformedPosition[1].w ) );
@@ -109,6 +132,8 @@ void main()
 	output.normal = NormalMatrix*normal[0];
 	output.alpha = 1.0f;
     output.texCoords = input[0].texCoords;
+    output.tangent = ModelNormalMatrix*input[0].tangent;
+    output.bitangent = ModelNormalMatrix*input[0].bitangent;
 	gl_Position = transformedPosition[0];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, hb, 0.f );
@@ -118,6 +143,8 @@ void main()
 	output.normal = NormalMatrix*normal[1];
 	output.alpha = 1.0f;
     output.texCoords = input[1].texCoords;
+    output.tangent = ModelNormalMatrix*input[1].tangent;
+    output.bitangent = ModelNormalMatrix*input[1].bitangent;
 	gl_Position = transformedPosition[1];
 	EmitVertex();
 	output.edgeDistance = vec3( 0.f, 0.f, hc );
@@ -127,6 +154,8 @@ void main()
 	output.normal = NormalMatrix*normal[2];
 	output.alpha = 1.0f;
     output.texCoords = input[2].texCoords;
+    output.tangent = ModelNormalMatrix*input[2].tangent;
+    output.bitangent = ModelNormalMatrix*input[2].bitangent;
 	gl_Position = transformedPosition[2];
 	EmitVertex();
     // Finish the primitive off

@@ -5,6 +5,7 @@
 #include <qquickview.h>
 #include <qvariant.h>
 #include "shadertestscene.h"
+#include <qmap.h>
 
 class ShaderTestScene;
 class Window;
@@ -17,9 +18,15 @@ class Mediator : public QObject
 	Q_OBJECT
 
 	Q_PROPERTY(QVariant selectedShader READ selectedShader WRITE setSelectedShader NOTIFY selectedShaderChanged)
+	Q_PROPERTY(QVariant selectedMinFilter READ selectedMinFilter WRITE setSelectedMinFilter NOTIFY selectedMinFilterChanged)
+	Q_PROPERTY(QVariant selectedMagFilter READ selectedMagFilter WRITE setSelectedMagFilter NOTIFY selectedMagFilterChanged)
+	Q_PROPERTY(QVariant anisotropy READ anisotropy WRITE setAnisotropy NOTIFY anisotropyChanged)
 
 signals:
 	void selectedShaderChanged(ShaderInfo shader);
+	void selectedMinFilterChanged(GLuint minFilter);
+	void selectedMagFilterChanged(GLuint magFilter);
+	void anisotropyChanged(GLfloat anisotropy);
 public:
 	Mediator(QObject *parent, ShaderTestScene *scene, Window *w);
 	~Mediator();
@@ -64,9 +71,32 @@ public:
 		shaderInfo.fragmentShaderProc = shader.value<QObject*>()->property("fragmentShaderProc").toString();
         emit selectedShaderChanged(shaderInfo);
     }
-
     QVariant selectedShader() const
     { return m_selectedShader; }
+
+    void setSelectedMinFilter(const QVariant &minFilter)
+    {
+		m_selectedMinFilter = minFilter;
+		emit selectedMinFilterChanged(m_texMinFilter[minFilter.toString()]);
+    }
+    QVariant selectedMinFilter() const
+    { return m_selectedMinFilter; }
+
+    void setSelectedMagFilter(const QVariant &magFilter)
+    {
+		m_selectedMagFilter = magFilter;
+		emit selectedMagFilterChanged(m_texMagFilter[magFilter.toString()]);
+    }
+    QVariant selectedMagFilter() const
+    { return m_selectedMagFilter; }
+
+    void setAnisotropy(const QVariant &anisotropy)
+    {
+		m_anisotropy = anisotropy;
+		emit anisotropyChanged(anisotropy.toFloat());
+    }
+    QVariant anisotropy() const
+    { return m_anisotropy; }
 
 private:
 	Window *m_mainWnd;
@@ -74,7 +104,12 @@ private:
 	QQuickView *m_uiWnd;
 
 	QVariant m_selectedShader;
- public:
+	QVariant m_selectedMinFilter;
+	QVariant m_selectedMagFilter;
+
+	QMap<QString, GLuint> m_texMinFilter;
+	QMap<QString, GLuint> m_texMagFilter;
+	QVariant m_anisotropy;
 };
 
 Q_DECLARE_METATYPE(Mediator*)

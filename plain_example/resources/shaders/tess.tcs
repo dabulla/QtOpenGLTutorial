@@ -15,12 +15,16 @@ in rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } input[];
 
 out rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } output[];
 
 uniform float tessLevelInner;
@@ -31,6 +35,8 @@ void main()
     output[gl_InvocationID].position = input[gl_InvocationID].position;
     output[gl_InvocationID].normal = input[gl_InvocationID].normal;
     output[gl_InvocationID].texCoords = input[gl_InvocationID].texCoords;
+    output[gl_InvocationID].tangent = input[gl_InvocationID].tangent;
+    output[gl_InvocationID].bitangent = input[gl_InvocationID].bitangent;
     if (gl_InvocationID == 0) {
         gl_TessLevelInner[0] = tessLevelInner;
         gl_TessLevelOuter[0] = tessLevelOuter;

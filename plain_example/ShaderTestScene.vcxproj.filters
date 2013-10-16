@@ -33,19 +33,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="common\abstractscene.cpp">
-      <Filter>Source Dateien</Filter>
-    </ClCompile>
-    <ClCompile Include="common\camera.cpp">
-      <Filter>Source Dateien</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
     <ClCompile Include="common\material.cpp">
-      <Filter>Source Dateien</Filter>
-    </ClCompile>
-    <ClCompile Include="common\sampler.cpp">
       <Filter>Source Dateien</Filter>
     </ClCompile>
     <ClCompile Include="common\texture.cpp">
@@ -53,18 +44,6 @@
     </ClCompile>
     <ClCompile Include="window.cpp">
       <Filter>Source Dateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Debug\moc_abstractscene.cpp">
-      <Filter>Generierte Dateien\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Release\moc_abstractscene.cpp">
-      <Filter>Generierte Dateien\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="Debug\moc_camera.cpp">
-      <Filter>Generierte Dateien\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Release\moc_camera.cpp">
-      <Filter>Generierte Dateien\Release</Filter>
     </ClCompile>
     <ClCompile Include="Debug\moc_window.cpp">
       <Filter>Generierte Dateien\Debug</Filter>
@@ -95,19 +74,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="common\abstractscene.h">
-      <Filter>Header Dateien</Filter>
-    </CustomBuild>
-    <CustomBuild Include="common\camera.h">
-      <Filter>Header Dateien</Filter>
-    </CustomBuild>
-    <ClInclude Include="common\camera_p.h">
-      <Filter>Header Dateien</Filter>
-    </ClInclude>
     <ClInclude Include="common\material.h">
-      <Filter>Header Dateien</Filter>
-    </ClInclude>
-    <ClInclude Include="common\sampler.h">
       <Filter>Header Dateien</Filter>
     </ClInclude>
     <ClInclude Include="common\texture.h">
@@ -139,9 +106,6 @@
     <ClInclude Include="obj-0.1\obj.hpp">
       <Filter>Header Dateien\libobj</Filter>
     </ClInclude>
-    <ClInclude Include="LoaderObjFast.h">
-      <Filter>Header Dateien</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\inline.frag">
@@ -171,5 +135,6 @@
     <None Include="ui\overlay.qml">
       <Filter>Resource Dateien</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

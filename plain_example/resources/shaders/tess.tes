@@ -7,12 +7,16 @@ in rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } input[];
 
 out rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } output;
 
 uniform sampler2D heightTexture;
@@ -48,6 +52,16 @@ void main()
     vec3 n2 = gl_TessCoord.z * input[2].normal;
 	vec3 normal = n0+n1+n2;
 	
+    vec3 ta0 = gl_TessCoord.x * input[0].tangent;
+    vec3 ta1 = gl_TessCoord.y * input[1].tangent;
+    vec3 ta2 = gl_TessCoord.z * input[2].tangent;
+	vec3 tangent = ta0+ta1+ta2;
+	
+    vec3 bt0 = gl_TessCoord.x * input[0].bitangent;
+    vec3 bt1 = gl_TessCoord.y * input[1].bitangent;
+    vec3 bt2 = gl_TessCoord.z * input[2].bitangent;
+	vec3 bitangent = bt0+bt1+bt2;
+	
     vec2 t0 = gl_TessCoord.x * input[0].texCoords;
     vec2 t1 = gl_TessCoord.y * input[1].texCoords;
     vec2 t2 = gl_TessCoord.z * input[2].texCoords;
@@ -55,7 +69,9 @@ void main()
 	
 	vec2 uv = position.xy;
 	float bump = texture(heightTexture,  texCoords).x;
-	output.position = position-normal*(bump-0.5)*tessScale*0.01;
-	output.normal = normal*texture(normalTexture,  texCoords).xyz;//*normalFromHeightMap(heightTexture, uv).xyz;
+	output.position = position+normal*(bump-0.5)*tessScale*0.01;
+	output.normal = normal;
+	output.tangent = tangent;
+	output.bitangent = bitangent;
 	output.texCoords = texCoords;
 }

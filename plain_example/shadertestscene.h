@@ -41,12 +41,13 @@ struct ShaderInfo
 	QString fragmentShaderProc;
 };
 
-class ShaderTestScene : public AbstractScene
+class ShaderTestScene : public QObject
 {
     Q_OBJECT
-
+		
 public:
     ShaderTestScene( QObject* parent = 0 );
+	ShaderTestScene::~ShaderTestScene();
 
     virtual void initialise();
     virtual void update( float t );
@@ -65,13 +66,18 @@ public:
 	virtual void setObjectPlane() { m_currentObject = OBJECT_QUAD;}
 
     // Camera motion control
-    void setSideSpeed( float vx ) { m_v.setX( vx ); }
-    void setVerticalSpeed( float vy ) { m_v.setY( vy ); }
-    void setForwardSpeed( float vz ) { m_v.setZ( vz ); }
-    void setViewCenterFixed( bool b ) { m_viewCenterFixed = b; }
-    void moveForward( float vz ) { m_offset.setZ( m_offset.z() + vz ); }
+    void moveSide( float x ) { m_offset.setX( m_offset.x() + x ); }
+    void moveVertical( float y ) { m_offset.setY( m_offset.y() + y ); }
+    void moveForward( float z ) { m_offset.setZ( m_offset.z() + z ); }
 
-
+	// Camera motion control
+	// This is needed to set movement-speed independent of frames.
+	// OnKeydown -> set movementspeed 1
+	// OnKeyUp -> set movementspeed 0
+    void setMovementSide( float vx ) { m_velocity.setX( vx ); }
+    void setMovementVertical( float vy ) { m_velocity.setY( vy ); }
+    void setMovementForward( float vz ) { m_velocity.setZ( vz ); }
+	
 	enum CameraMode {
 		CAMERMODE_WALKTHROUGH,
 		CAMERMODE_OBJECTINSPECTION
@@ -82,8 +88,6 @@ public:
 		OBJECT_QUAD
 	};
 
-    // Translate relative to camera orientation axes
-    void translate( const QVector3D& vLocal);
 
     // Camera orientation control
     void pan( const float &angle );
@@ -93,9 +97,14 @@ public:
 
 	void setGlCullMode(int cullMode) { m_glCullMode = cullMode; }
 	void setRotationSpeed(float rot) { m_rotationSpeed = rot; }
-
+	
+    void setContext( QOpenGLContext* context ) { m_context = context; }
+    QOpenGLContext* context() const { return m_context; }
 public slots:
 	void setActiveShader(const ShaderInfo &shader);
+	void setSelectedMinFilter(const GLuint &minFilter);
+	void setSelectedMagFilter(const GLuint &magFilter);
+	void setAnisotropy(const GLfloat &anisotropy);
 
 private:
     void prepareShaders();
@@ -103,15 +112,18 @@ private:
     void prepareVertexBuffers();
 	void passUniforms();
 
-	void genNormalsGPU();
-
+	//void genNormalsGPU();
+	
+    // Translate relative to camera orientation axes
+    void translate( const QVector3D& vLocal);
+	
 	unsigned int m_glCullMode;
-	unsigned int m_rotationSpeed;
 
 	QHash<QString, float> m_initialUniforms1f;
 	QHash<QString, int> m_initialUniforms1i;
 	QHash<QString, QVector3D> m_initialUniforms3f;
 	QHash<QString, bool> m_initialUniforms1b;
+
 
 	////Vectors and Matrices, Transformation related////
     QVector3D m_position;
@@ -120,17 +132,14 @@ private:
 
     QVector3D m_cameraToCenter; // The vector from the camera position to the view center
 
+    QVector3D m_offset; //Used to accumulate movement during frame.
+    QVector3D m_velocity;
+
     QMatrix4x4 m_viewMatrix;
     QMatrix4x4 m_projectionMatrix;
     QMatrix4x4 m_viewProjectionMatrix;
+    QMatrix4x4 m_modelMatrix;
 	
-	bool m_isInitialized;
-	ShaderInfo m_shaderInfo;
-	QOpenGLDebugLogger m_logger;
-
-    QVector3D m_v;
-    QVector3D m_offset;
-    bool m_viewCenterFixed;
     float m_panAngle;
     float m_tiltAngle;
 
@@ -141,36 +150,52 @@ private:
     QMatrix4x4 m_viewportMatrix;
     QVector2D m_viewportSize;
 
+	GLuint	m_tilingSamplerId;
+
+	/// All members used for bunny object
     QOpenGLVertexArrayObject m_vaoBunny;
 
 	QOpenGLBuffer m_positionBuffer;
 	QOpenGLBuffer m_normalsBuffer;
+	QOpenGLBuffer m_tangentsBuffer;
+	QOpenGLBuffer m_bitangentsBuffer;
 	QOpenGLBuffer m_texCoordsBuffer;
 	QOpenGLBuffer m_indexBuffer;
 
     unsigned int  m_elementCount;
 	unsigned int m_vertexCount;
 	
+	// All members used for plane object
+	const unsigned int m_planeResolutionX = 8;
+	const unsigned int m_planeResolutionZ = 8;
+
     QOpenGLVertexArrayObject m_vaoQuad;
 
 	QOpenGLBuffer m_quadPositionBuffer;
 	QOpenGLBuffer m_quadNormalsBuffer;
+	QOpenGLBuffer m_quadTangentsBuffer;
+	QOpenGLBuffer m_quadBitangentsBuffer;
 	QOpenGLBuffer m_quadTexCoordsBuffer;
 	QOpenGLBuffer m_quadIndexBuffer;
+	
+    const unsigned int  m_quadElementCount = m_planeResolutionX*m_planeResolutionZ;
+	const unsigned int m_quadVertexCount = (m_planeResolutionX-1)*(m_planeResolutionZ-1)*2; // For each Vertex there will be two triangles, except the last row and column of the plane.
 
+	// Not used yet. This would be important for adaptive tesselation
     float m_screenSpaceError;
 	
-	//Note: we must not use a shared pointer here, as Qt would try to delete the element twice when the application exits.
     Material* m_material;
-
-    QMatrix4x4 m_modelMatrix;
 
     float m_time;
     const float m_metersToUnits;
+	
+	bool m_isInitialized;
+	ShaderInfo m_shaderInfo;
+	QOpenGLDebugLogger m_logger;
 
-    QStringList m_displayModeNames;
-    QVector<GLuint> m_displayModeSubroutines;
+	unsigned int m_rotationSpeed;
 
+    QOpenGLContext* m_context;
     QOpenGLFunctions_4_2_Core* m_funcs;
 private slots:
 	void onMessageLogged( QOpenGLDebugMessage message );

@@ -9,6 +9,8 @@ in rawVertex {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } input[3];
 
 //structure MUST have the same name as in the fragment shader (and the same attributes)
@@ -20,6 +22,8 @@ out Vertex {
 	vec3 normal;
 	float alpha;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } output;
 
 uniform mat4 viewportMatrix;
@@ -49,6 +53,8 @@ void main()
 			output.normal = NormalMatrix*input[i].normal;
 			output.alpha = 1.f-float(renderPass+1)/float(renderPasses+1);
 			output.texCoords = input[i].texCoords;
+			output.tangent = input[i].tangent;
+			output.bitangent = input[i].bitangent;
 			gl_Position = transformedPosition;
 			EmitVertex();
 		}

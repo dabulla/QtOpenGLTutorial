@@ -21,17 +21,19 @@
 const float degToRad = float( M_PI / 180.0 );
 
 ShaderTestScene::ShaderTestScene( QObject* parent )
-    : AbstractScene( parent ),
-      m_v(),
-      m_viewCenterFixed( false ),
+	: QObject( parent ),
       m_panAngle( 0.0f ),
       m_tiltAngle( 0.0f ),
       m_positionBuffer( QOpenGLBuffer::VertexBuffer ),
       m_normalsBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_tangentsBuffer( QOpenGLBuffer::VertexBuffer ),
+      m_bitangentsBuffer( QOpenGLBuffer::VertexBuffer ),
 	  m_texCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
       m_indexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_quadPositionBuffer( QOpenGLBuffer::VertexBuffer ),
       m_quadNormalsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_quadTangentsBuffer( QOpenGLBuffer::VertexBuffer ),
+	  m_quadBitangentsBuffer( QOpenGLBuffer::VertexBuffer ),
 	  m_quadTexCoordsBuffer( QOpenGLBuffer::VertexBuffer ),
       m_quadIndexBuffer( QOpenGLBuffer::IndexBuffer ),
       m_screenSpaceError( 12.0f ),
@@ -48,8 +50,16 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
 	  m_position( -1.3f, 1.5f, 2.0f ),
 	  m_viewCenter( 0.0f, 1.1f, 0.0f ),
 	  m_upVector(0.0f, 1.0f, 0.0f ),
-	  m_cameraToCenter(m_viewCenter-m_position)
+	  m_cameraToCenter(m_viewCenter-m_position),
+	  m_tilingSamplerId(0)
 {
+}
+
+ShaderTestScene::~ShaderTestScene()
+{
+	//if(m_tilingSamplerId) {
+ //       m_funcs->glDeleteSamplers( 1, &m_tilingSamplerId );
+	//}
 }
 
 void ShaderTestScene::onMessageLogged( QOpenGLDebugMessage message )
@@ -114,8 +124,7 @@ void ShaderTestScene::update( float t )
     const float dt = t - m_time;
     m_time = t;
 
-	//Add acceleration to movement
-	m_offset += m_v;
+	m_offset += m_velocity;
 
 	m_modelMatrix.rotate(m_rotationSpeed*dt, 0.f, 1.f, 0.0f);
 
@@ -329,20 +338,32 @@ void ShaderTestScene::resize( int w, int h )
 void ShaderTestScene::translate( const QVector3D& vLocal)
 {
 	QVector3D vWorld;
-	QVector3D x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
-    vWorld += vLocal.x() * x;
-    vWorld += vLocal.y() * m_upVector;
+	//Transform local movement to worldspace.
     vWorld += vLocal.z() * m_cameraToCenter.normalized();
-    // Update the camera position using the calculated world vector
-    m_position += vWorld;
-    // Also update the view center coordinates
-    m_viewCenter += vWorld;
+	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
+	{
+		// Use crossproduct of camera front direction and up vector for sideway movement
+		QVector3D x = QVector3D::crossProduct( m_cameraToCenter, m_upVector ).normalized();
+		vWorld += vLocal.x() * x;
+		// Use upvector for upward movement
+		vWorld += vLocal.y() * m_upVector;
+		// update the view center coordinates when using a walkthrough camera
+		m_viewCenter += vWorld;
+	} else {
+		// update the cameraToCenter vector (only in z direction) when using objectInspection
+		m_cameraToCenter -= vWorld;
+	}
+	// Update the camera position
+	m_position += vWorld;
 }
 
+// pan (point camera right or left)
 void ShaderTestScene::pan( const float &angle )
 {
+	//rotate the up- and cameraToCenter-vector using quaternion-math.
 	QQuaternion q = QQuaternion::fromAxisAndAngle( QVector3D(0.0f,1.0f,0.0f), -angle );
-    m_upVector = q.rotatedVector( m_upVector );
+	//If the camera looks up or down, the upvector rotates while panning
+	m_upVector = q.rotatedVector( m_upVector );
 	m_cameraToCenter = q.rotatedVector( m_cameraToCenter );
 	if(m_cameraMode == CAMERMODE_WALKTHROUGH)
 	{
@@ -352,6 +373,7 @@ void ShaderTestScene::pan( const float &angle )
 	}
 }
 
+//tilt (point camera up and down)
 void ShaderTestScene::tilt( const float &angle )
 {
 	QVector3D xBasis = QVector3D::crossProduct( m_upVector, m_cameraToCenter.normalized() ).normalized();
@@ -370,7 +392,7 @@ void ShaderTestScene::recompileShader()
 {
 	prepareShaders();
 	prepareTextures();
-	//TODO: resize is only needed for viewPortmatrix at the moment. TODO: Add unifomr functions for matrices...
+	//TODO: resize is only needed for viewPortmatrix at the moment. TODO: Add uniform functions for matrices...
 	resize(m_viewportSize.x(), m_viewportSize.y());
 }
 
@@ -433,13 +455,15 @@ void ShaderTestScene::prepareShaders()
 
 void ShaderTestScene::prepareTextures()
 {
-    SamplerPtr tilingSampler( new Sampler );
-    tilingSampler->create();
-    tilingSampler->setMinificationFilter( GL_LINEAR_MIPMAP_LINEAR );
-    m_funcs->glSamplerParameterf( tilingSampler->samplerId(), GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f );
-    tilingSampler->setMagnificationFilter( GL_LINEAR );
-    tilingSampler->setWrapMode( Sampler::DirectionS, GL_REPEAT );
-    tilingSampler->setWrapMode( Sampler::DirectionT, GL_REPEAT );
+	if(m_tilingSamplerId != 0) {
+		m_funcs->glDeleteSamplers( 1, &m_tilingSamplerId );
+	}
+    m_funcs->glGenSamplers( 1, &m_tilingSamplerId );
+	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    m_funcs->glSamplerParameterf( m_tilingSamplerId, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f );
+	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_WRAP_T, GL_REPEAT );
 
 	QImage diffuseImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/diffus.png" );
     m_funcs->glActiveTexture( GL_TEXTURE0 );
@@ -448,7 +472,7 @@ void ShaderTestScene::prepareTextures()
     diffuseTexture->bind();
     diffuseTexture->setImage( diffuseImage );
     diffuseTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 1, diffuseTexture, tilingSampler, QByteArrayLiteral( "diffuseTexture" ) );
+    m_material->setTextureUnitConfiguration( 1, diffuseTexture, m_tilingSamplerId, QByteArrayLiteral( "diffuseTexture" ) );
 
 	QImage heightImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/height.png" );
     m_funcs->glActiveTexture( GL_TEXTURE1 );
@@ -457,7 +481,7 @@ void ShaderTestScene::prepareTextures()
     heightTexture->bind();
     heightTexture->setImage( heightImage );
     heightTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 2, heightTexture, tilingSampler, QByteArrayLiteral( "heightTexture" ) );
+    m_material->setTextureUnitConfiguration( 2, heightTexture, m_tilingSamplerId, QByteArrayLiteral( "heightTexture" ) );
 
 	QImage normalImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/normal.png" );
     m_funcs->glActiveTexture( GL_TEXTURE2 );
@@ -466,7 +490,7 @@ void ShaderTestScene::prepareTextures()
     normalTexture->bind();
     normalTexture->setImage( normalImage );
     normalTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 3, normalTexture, tilingSampler, QByteArrayLiteral( "normalTexture" ) );
+    m_material->setTextureUnitConfiguration( 3, normalTexture, m_tilingSamplerId, QByteArrayLiteral( "normalTexture" ) );
 
 	QImage specularImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/specular.png" );
     m_funcs->glActiveTexture( GL_TEXTURE3 );
@@ -475,7 +499,7 @@ void ShaderTestScene::prepareTextures()
     specularTexture->bind();
     specularTexture->setImage( specularImage );
     specularTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 4, specularTexture, tilingSampler, QByteArrayLiteral( "specularTexture" ) );
+    m_material->setTextureUnitConfiguration( 4, specularTexture, m_tilingSamplerId, QByteArrayLiteral( "specularTexture" ) );
 
 	QImage displaceImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/displacement.png" );
     m_funcs->glActiveTexture( GL_TEXTURE4 );
@@ -484,7 +508,7 @@ void ShaderTestScene::prepareTextures()
     displaceTexture->bind();
     displaceTexture->setImage( displaceImage );
     displaceTexture->generateMipMaps();
-    m_material->setTextureUnitConfiguration( 5, displaceTexture, tilingSampler, QByteArrayLiteral( "displaceTexture" ) );
+    m_material->setTextureUnitConfiguration( 5, displaceTexture, m_tilingSamplerId, QByteArrayLiteral( "displaceTexture" ) );
 
     m_funcs->glActiveTexture( GL_TEXTURE0 );
 }
@@ -510,6 +534,20 @@ void ShaderTestScene::prepareVertexBuffers()
 	GLfloat *pB = loader.getCalculatedNormals();
 	m_normalsBuffer.allocate(pB, loader.getVertexCount()*3*sizeof(GLfloat) ); //TODO: Kommentar (GPU)
     m_normalsBuffer.release();
+	
+	m_tangentsBuffer.create();
+    m_tangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_tangentsBuffer.bind();
+	GLfloat *pT = loader.getCalculatedTangents();
+	m_tangentsBuffer.allocate(pT, loader.getVertexCount()*3*sizeof(GLfloat) );
+    m_tangentsBuffer.release();
+	
+	m_bitangentsBuffer.create();
+    m_bitangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_bitangentsBuffer.bind();
+	GLfloat *pBT = loader.getCalculatedBitangents();
+	m_bitangentsBuffer.allocate(pBT, loader.getVertexCount()*3*sizeof(GLfloat) );
+    m_bitangentsBuffer.release();
 	
     m_texCoordsBuffer.create();
     m_texCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
@@ -539,20 +577,61 @@ void ShaderTestScene::prepareVertexBuffers()
 		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Normal" );
 
+        m_tangentsBuffer.bind();
+		shader->setAttributeBuffer("in_Tangent", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Tangent" );
+
+        m_bitangentsBuffer.bind();
+		shader->setAttributeBuffer("in_Bitangent", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Bitangent" );
+
         m_texCoordsBuffer.bind();
 		shader->setAttributeBuffer("in_TexCoords", GL_FLOAT, 0, 2, 2*sizeof(float));
         shader->enableAttributeArray( "in_TexCoords" );
 
 		m_indexBuffer.bind();
     }
+	//TODO: think over these release()s
 	//After using the vao, resources must be released
     m_material->shader()->release();
     m_positionBuffer.release();
     m_normalsBuffer.release();
+	m_tangentsBuffer.release();
+	m_bitangentsBuffer.release();
     m_texCoordsBuffer.release();
     m_indexBuffer.release();
 
 
+	const float planeSizeX = 2.f;
+	const float planeSizeZ = 2.f;
+
+	float planeVertexPositions[m_quadVertexCount*3];
+	int planeIndices[m_quadElementCount*3]; 
+
+	for(int ix=0 ; ix<m_planeResolutionX ; ++ix)
+	{
+		float posX = ((float)ix/(float)m_planeResolutionX)*planeSizeX-(planeSizeX*0.5);
+		for(int iz=0 ; iz<m_planeResolutionZ ; ++iz)
+		{
+			unsigned int idx = ix*m_planeResolutionX+iz;
+			float posZ = ((float)iz/(float)m_planeResolutionZ)*planeSizeZ-(planeSizeZ*0.5);
+			planeVertexPositions[idx] = posX;
+			planeVertexPositions[idx+1] = 0.f;
+			planeVertexPositions[idx+2] = posZ;
+
+			if (ix > 0 && iz > 0) {
+				//construct indices for two clockwise triangles
+				unsigned int idxIndex = idx*2*3;
+				planeIndices[idxIndex] = idx - 1 - m_planeResolutionX;
+				planeIndices[idxIndex+1] = idx - m_planeResolutionX;
+				planeIndices[idxIndex+2] = idx - 1;
+
+				planeIndices[idxIndex+3] = idx;
+				planeIndices[idxIndex+4] = idx - 1;
+				planeIndices[idxIndex+5] = idx - m_planeResolutionX;
+			}
+		}
+	}
 	//The same for a quad object
 	// Use 0.1 to adapt scaling of bunny.obj (a squad of size 2x2 units would be too large)
 	const float quadVertexPositions[] = { -0.1f,-0.1f,0.f, 
@@ -567,10 +646,20 @@ void ShaderTestScene::prepareVertexBuffers()
 									0.f,0.f,1.f,
 									0.f,0.f,1.f};
 
+	const float quadTangents[] = {   0.f,1.f,0.f, 
+									0.f,1.f,0.f,
+									0.f,1.f,0.f,
+									0.f,1.f,0.f};
+
+	const float quadBitangents[] = {   1.f,0.f,0.f, 
+									1.f,0.f,0.f,
+									1.f,0.f,0.f,
+									1.f,0.f,0.f};
+
 	const float quadTexCoords[] = { 0.f, 0.f, 
-									1.f, 0.f,
-									1.f, 1.f,
-									0.f, 1.f};
+									0.2f, 0.f,
+									0.2f, 0.2f,
+									0.f, 0.2f};
 	
     m_quadPositionBuffer.create();
     m_quadPositionBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
@@ -589,6 +678,18 @@ void ShaderTestScene::prepareVertexBuffers()
     m_quadNormalsBuffer.bind();
 	m_quadNormalsBuffer.allocate(quadNormals, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
     m_quadNormalsBuffer.release();
+
+    m_quadTangentsBuffer.create();
+    m_quadTangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadTangentsBuffer.bind();
+	m_quadTangentsBuffer.allocate(quadTangents, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
+    m_quadTangentsBuffer.release();
+
+    m_quadBitangentsBuffer.create();
+    m_quadBitangentsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    m_quadBitangentsBuffer.bind();
+	m_quadBitangentsBuffer.allocate(quadBitangents, 4*3*sizeof(GLfloat) ); // 4 Vertices for the quad, 3 components per vertex (x,y,z)
+    m_quadBitangentsBuffer.release();
 
     m_quadTexCoordsBuffer.create();
     m_quadTexCoordsBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
@@ -609,14 +710,25 @@ void ShaderTestScene::prepareVertexBuffers()
 		shader->setAttributeBuffer("in_Normal", GL_FLOAT, 0, 3, 3*sizeof(float));
         shader->enableAttributeArray( "in_Normal" );
 
+        m_quadTangentsBuffer.bind();
+		shader->setAttributeBuffer("in_Tangent", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Tangent" );
+
+        m_quadBitangentsBuffer.bind();
+		shader->setAttributeBuffer("in_Bitangent", GL_FLOAT, 0, 3, 3*sizeof(float));
+        shader->enableAttributeArray( "in_Bitangent" );
+
         m_quadTexCoordsBuffer.bind();
 		shader->setAttributeBuffer("in_TexCoords", GL_FLOAT, 0, 2, 2*sizeof(float));
         shader->enableAttributeArray( "in_TexCoords" );
 		m_quadIndexBuffer.bind();
     }
+	//TODO: think over these release()s
     m_material->shader()->release();
     m_quadPositionBuffer.release();
     m_quadNormalsBuffer.release();
+	m_quadTangentsBuffer.release();
+	m_quadBitangentsBuffer.release();
 	m_quadTexCoordsBuffer.release();
     m_quadIndexBuffer.release();
 }
@@ -685,6 +797,29 @@ void ShaderTestScene::setActiveShader(const ShaderInfo &shader)
 		recompileShader();
 	}
 }
+
+void ShaderTestScene::setSelectedMinFilter(const GLuint &minFilter)
+{
+	if(m_isInitialized && m_tilingSamplerId)
+	{
+		m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_MIN_FILTER, minFilter );
+	}
+}
+void ShaderTestScene::setSelectedMagFilter(const GLuint &magFilter)
+{
+	if(m_isInitialized && m_tilingSamplerId)
+	{
+		m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_MAG_FILTER, magFilter );
+	}
+}
+void ShaderTestScene::setAnisotropy(const GLfloat &anisotropy)
+{
+	if(m_isInitialized && m_tilingSamplerId && anisotropy != 0)
+	{
+		m_funcs->glSamplerParameterf( m_tilingSamplerId, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy );
+	}
+}
+
 /*
 void ShaderTestScene::genNormalsGPU() {
 	// Creating the compute shader, and the program object containing the shader

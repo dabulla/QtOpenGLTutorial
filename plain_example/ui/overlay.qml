@@ -19,26 +19,6 @@ Rectangle {
             uniforms: "phongUniforms"
         }
         ListElement {
-            text: "Textured Phong (Projection, SpecularMap)"
-            vertexShaderFile: "resources/shaders/passthrough.vert"
-            vertexShaderProc: ""
-            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
-            geometryShaderProc: ""
-            fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "textureProjectedPhongSpecular"
-            uniforms: "phongUniforms"
-        }
-        ListElement {
-            text: "Textured Phong (SpecularMap)"
-            vertexShaderFile: "resources/shaders/passthrough.vert"
-            vertexShaderProc: ""
-            geometryShaderFile: "resources/shaders/phongcomputenormalsflat.geom"
-            geometryShaderProc: ""
-            fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "texturePhongSpecular"
-            uniforms: "phongUniforms"
-        }
-        ListElement {
             text: "Plain Phong"
             vertexShaderFile: "resources/shaders/passthrough.vert"
             vertexShaderProc: ""
@@ -115,7 +95,7 @@ Rectangle {
             defaultValue: 0.1
             minValue: 0
             maxValue: 3
-            step: 0.1
+            step: 0.001
         }
         ListElement {
             name: "Material Kd"
@@ -124,16 +104,23 @@ Rectangle {
             defaultValue: 0.8
             minValue: 0
             maxValue: 3
-            step: 0.1
+            step: 0.001
+        }
+        ListElement {
+            name: "Use Specular Map"
+            uniformName: "useSpecularMap"
+            isVector: false
+            isBool: true
+            defaultChecked: true
         }
         ListElement {
             name: "Material Ks"
             uniformName: "material.Ks"
             isVector: true
-            defaultValue: 1.0
+            defaultValue: 2.0
             minValue: 0
             maxValue: 10
-            stee: 0.1
+            stee: 0.001
         }
         ListElement {
             name: "Light Position"
@@ -263,7 +250,7 @@ Rectangle {
 
     Rectangle {
         id: rootRectangle
-        width: 200
+        width: 220
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
@@ -275,274 +262,314 @@ Rectangle {
             contentHeight: controlsColumn.height
             contentWidth: width
 
-        ColumnLayout  {
-            //anchors.fill: parent
-            id: controlsColumn
-            Button {
-                id: compileBtn
-                text: "Compile Shader"
-                onClicked: {
-                    console.log("recompiling shader");
-                    application.reloadShader();
+            ColumnLayout  {
+                //anchors.fill: parent
+                id: controlsColumn
+                Button {
+                    id: compileBtn
+                    text: "Compile Shader"
+                    onClicked: {
+                        console.log("recompiling shader");
+                        application.reloadShader();
+                    }
                 }
-            }
-            Button {
-                id: toggleUiBtn
-                text: "Toggle ui"
-                onClicked: {
-                    console.log("toggle ui");
-                    application.toggleDialog();
-                }
-            }
-            GroupBox {
-                id: cameraModeGroupBox
-                ///anchors.left: parent.left
-                ///anchors.right: parent.right
-                title: "Camera Mode"
-                ExclusiveGroup { id: cameraMode }
-                ColumnLayout {
-                    RadioButton {
-                        id: walkthroughRadio
-                        text: "Walkthrough"
-                        exclusiveGroup: cameraMode
-                        checked: true
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("camera: "+text);
-                                application.setCamerModeWalkthrough();
+                //Button {
+                //    id: toggleUiBtn
+                //    text: "Toggle ui"
+                //    onClicked: {
+                //        console.log("toggle ui");
+                //        application.toggleDialog();
+                //    }
+                //}
+                GroupBox {
+                    id: cameraModeGroupBox
+                    ///anchors.left: parent.left
+                    ///anchors.right: parent.right
+                    title: "Camera Mode"
+                    ExclusiveGroup { id: cameraMode }
+                    ColumnLayout {
+                        RadioButton {
+                            id: walkthroughRadio
+                            text: "Walkthrough"
+                            exclusiveGroup: cameraMode
+                            checked: false
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("camera: "+text);
+                                    application.setCamerModeWalkthrough();
+                                }
                             }
                         }
+
+                        RadioButton {
+                            id: objinspectRadio
+                            text: "Object Inspection"
+                            exclusiveGroup: cameraMode
+                            checked: true
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("camera: "+text);
+                                    application.setCamerModeObjectInspection();
+                                }
+                            }
+                        }
+                    }
+                }
+                GroupBox {
+                    id: objectGroupBox
+                    title: "Object"
+                    ExclusiveGroup { id: currentObject }
+                    ColumnLayout {
+                        RadioButton {
+                            id: bunnyRadio
+                            text: "Bunny"
+                            exclusiveGroup: currentObject
+                            checked: true
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("object: "+text);
+                                    application.setObjectBunny();
+                                }
+                            }
+                        }
+
+                        RadioButton {
+                            id: planeRadio
+                            text: "Plane"
+                            exclusiveGroup: currentObject
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("object: "+text);
+                                    application.setObjectPlane();
+                                }
+                            }
+                        }
+                    }
+                }
+                CheckBox {
+                    id: rotationCb
+                    ///anchors.left: parent.left
+                    text: "Rotate"
+                    onCheckedChanged: {
+                        console.log("rotation: "+checked);
+                        if(checked)
+                            application.enableRotation();
+                        else
+                            application.disableRotation();
+                    }
+                }
+                GroupBox {
+                    id: cullModeGroupBox
+                    ///anchors.left: parent.left
+                    ///anchors.right: parent.right
+                    title: "Camera Mode"
+                    ExclusiveGroup { id: cullMode }
+                    ColumnLayout {
+                        RadioButton {
+                            id: frontRadio
+                            text: "GL_FRONT"
+                            exclusiveGroup: cullMode
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("cull: "+text);
+                                    application.setCullmodeFront();
+                                }
+                            }
+                        }
+                        RadioButton {
+                            id: backRadio
+                            text: "GL_BACK"
+                            exclusiveGroup: cullMode
+                            checked: true
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("cull: "+text);
+                                    application.setCullmodeBack();
+                                }
+                            }
+                        }
+                        RadioButton {
+                            id: bothRadio
+                            text: "GL_FRONT_AND_BACK"
+                            exclusiveGroup: cullMode
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("cull: "+text);
+                                    application.setCullmodeBoth();
+                                }
+                            }
+                        }
+                        RadioButton {
+                            id: noneRadio
+                            text: "Disable"
+                            exclusiveGroup: cullMode
+                            onCheckedChanged: {
+                                if(checked) {
+                                    console.log("cull: "+text);
+                                    application.setCullmodeNone();
+                                }
+                            }
+                        }
+                    }
+                }
+                Label {
+                    text: "GL_TEXTURE_MIN_FILTER"
+                }
+                ComboBox {
+                    id: minTexfilter
+                    model: appGlTexMinFilter
+                    onCurrentIndexChanged: {
+                        application.selectedMinFilter = appGlTexMinFilter[currentIndex];
                     }
 
-                    RadioButton {
-                        id: objinspectRadio
-                        text: "Object Inspection"
-                        exclusiveGroup: cameraMode
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("camera: "+text);
-                                application.setCamerModeObjectInspection();
-                            }
-                        }
+                }
+                Label {
+                    text: "GL_TEXTURE_MAG_FILTER"
+                }
+                ComboBox {
+                    id: magTexfilter
+                    model: appGlTexMagFilter
+                    onCurrentIndexChanged: {
+                        application.selectedMagFilter = appGlTexMagFilter[currentIndex];
                     }
                 }
-            }
-            GroupBox {
-                id: objectGroupBox
-                title: "Object"
-                ExclusiveGroup { id: currentObject }
-                ColumnLayout {
-                    RadioButton {
-                        id: bunnyRadio
-                        text: "Bunny"
-                        exclusiveGroup: currentObject
-                        checked: true
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("object: "+text);
-                                application.setObjectBunny();
-                            }
-                        }
+                Label {
+                    id: labeledUniformLabel
+                    text: "Anisotropy: " + anisotrophySlider.value.toFixed(0)
+                }
+                Slider {
+                    id: anisotrophySlider
+                    implicitWidth: rootRectangle.width-10
+                    value: 16
+                    maximumValue: 32
+                    minimumValue: 1
+                    stepSize: 1
+                    onValueChanged: {
+                        application.anisotropy = value;
                     }
+                }
+                Label {
+                    text: "Shader"
+                }
+                ComboBox {
+                    id: shaderSelectionComboBox
+                    model: shaderListModel
+                    onCurrentIndexChanged: {
+                        console.log(shaderListModel.get(currentIndex).text);
+                        application.selectedShader = shaderListModel.get(currentIndex);
+                    }
+                }
 
-                    RadioButton {
-                        id: planeRadio
-                        text: "Plane"
-                        exclusiveGroup: currentObject
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("object: "+text);
-                                application.setObjectPlane();
+                Component {
+                    id: shaderUniformDelegate
+                    ColumnLayout {
+                        spacing: 0
+                        RowLayout {
+                            spacing: 5
+                            Label {
+                                id: labeledUniformLabel
+                                text: name + ": " + labeledUniformSlider.value.toFixed(2) + (isVector?", " + labeledUniformSlider2.value.toFixed(2) + ", " + labeledUniformSlider3.value.toFixed(2) :"")
+                                font.bold: isBool?boolCb.checked!==defaultChecked:labeledUniformSlider.value!==defaultValue||(isVector&&(labeledUniformSlider2.value!==defaultValue||labeledUniformSlider3.value!==defaultValue))
+                            }
+                            CheckBox {
+                                id: linkedCb
+                                text: "fix"
+                                visible: isVector
+                                checked: true
                             }
                         }
-                    }
-                }
-            }
-            CheckBox {
-                id: rotationCb
-                ///anchors.left: parent.left
-                text: "Rotate"
-                onCheckedChanged: {
-                    console.log("rotation: "+checked);
-                    if(checked)
-                        application.enableRotation();
-                    else
-                        application.disableRotation();
-                }
-            }
-            GroupBox {
-                id: cullModeGroupBox
-                ///anchors.left: parent.left
-                ///anchors.right: parent.right
-                title: "Camera Mode"
-                ExclusiveGroup { id: cullMode }
-                ColumnLayout {
-                    RadioButton {
-                        id: frontRadio
-                        text: "GL_FRONT"
-                        exclusiveGroup: cullMode
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("cull: "+text);
-                                application.setCullmodeFront();
+                        Slider {
+                            ///anchors.horizontalCenter: parent.horizontalCenter
+                            id: labeledUniformSlider
+                            visible: !isBool
+                            implicitWidth: rootRectangle.width-10
+                            value: defaultValue
+                            maximumValue: maxValue
+                            minimumValue: minValue
+                            stepSize: step
+                            onValueChanged: {
+                                if(isVector) {
+                                    application.setShaderUniformValue3f(uniformName, value, labeledUniformSlider2.value, labeledUniformSlider3.value);
+                                } else {
+                                    if(isInt)
+                                        application.setShaderUniformValue1i(uniformName, value);
+                                    else
+                                        application.setShaderUniformValue1f(uniformName, value);
+                                }
+                                if(linkedCb.checked) {
+                                    labeledUniformSlider2.value = value;
+                                    labeledUniformSlider3.value = value;
+                                }
                             }
                         }
-                    }
-                    RadioButton {
-                        id: backRadio
-                        text: "GL_BACK"
-                        exclusiveGroup: cullMode
-                        checked: true
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("cull: "+text);
-                                application.setCullmodeBack();
-                            }
-                        }
-                    }
-                    RadioButton {
-                        id: bothRadio
-                        text: "GL_FRONT_AND_BACK"
-                        exclusiveGroup: cullMode
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("cull: "+text);
-                                application.setCullmodeBoth();
-                            }
-                        }
-                    }
-                    RadioButton {
-                        id: noneRadio
-                        text: "Disable"
-                        exclusiveGroup: cullMode
-                        onCheckedChanged: {
-                            if(checked) {
-                                console.log("cull: "+text);
-                                application.setCullmodeNone();
-                            }
-                        }
-                    }
-                }
-            }
-            ComboBox {
-                id: shaderSelectionComboBox
-                model: shaderListModel
-                onCurrentIndexChanged: {
-                    console.log(shaderListModel.get(currentIndex).text);
-                    application.selectedShader = shaderListModel.get(currentIndex);
-                }
-            }
+                        Slider {
+                            ///anchors.horizontalCenter: parent.horizontalCenter
+                            id: labeledUniformSlider2
+                            visible: isVector && !isBool
+                            implicitWidth: rootRectangle.width-10
+                            value: defaultValue
+                            maximumValue: maxValue
+                            minimumValue: minValue
+                            stepSize: step
+                            onValueChanged: {
+                                if(isVector)
+                                    application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
+                                else {
+                                    if(isInt)
+                                        application.setShaderUniformValue1i(uniformName, value);
+                                    else
+                                        application.setShaderUniformValue1f(uniformName, value);
+                                }
+                                if(linkedCb.checked) {
+                                    labeledUniformSlider.value = value;
+                                    labeledUniformSlider3.value = value;
+                                }
 
-            Component {
-                id: shaderUniformDelegate
-                ColumnLayout {
-                    spacing: 0
-                    RowLayout {
-                        spacing: 5
-                        Label {
-                            id: labeledUniformLabel
-                            text: name + ": " + labeledUniformSlider.value.toFixed(2) + (isVector?", " + labeledUniformSlider2.value.toFixed(2) + ", " + labeledUniformSlider3.value.toFixed(2) :"")
-                            font.bold: isBool?boolCb.checked!==defaultChecked:labeledUniformSlider.value!==defaultValue||(isVector&&(labeledUniformSlider2.value!==defaultValue||labeledUniformSlider3.value!==defaultValue))
+                            }
+                        }
+                        Slider {
+                            ///anchors.horizontalCenter: parent.horizontalCenter
+                            id: labeledUniformSlider3
+                            visible: isVector && !isBool
+                            implicitWidth: rootRectangle.width-10
+                            value: defaultValue
+                            maximumValue: maxValue
+                            minimumValue: minValue
+                            stepSize: step
+                            onValueChanged: {
+                                if(isVector)
+                                    application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
+                                else {
+                                    if(isInt)
+                                        application.setShaderUniformValue1i(uniformName, value);
+                                    else
+                                        application.setShaderUniformValue1f(uniformName, value);
+                                }
+                                if(linkedCb.checked) {
+                                    labeledUniformSlider.value = value;
+                                    labeledUniformSlider2.value = value;
+                                }
+                            }
                         }
                         CheckBox {
-                            id: linkedCb
-                            text: "fix"
-                            visible: isVector
-                            checked: true
-                        }
-                    }
-                    Slider {
-                        ///anchors.horizontalCenter: parent.horizontalCenter
-                        id: labeledUniformSlider
-                        visible: !isBool
-                        implicitWidth: rootRectangle.width-10
-                        value: defaultValue
-                        maximumValue: maxValue
-                        minimumValue: minValue
-                        stepSize: step
-                        onValueChanged: {
-                            if(isVector) {
-                                application.setShaderUniformValue3f(uniformName, value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            } else {
-                                if(isInt)
-                                    application.setShaderUniformValue1i(uniformName, value);
-                                else
-                                    application.setShaderUniformValue1f(uniformName, value);
-                            }
-                            if(linkedCb.checked) {
-                                labeledUniformSlider2.value = value;
-                                labeledUniformSlider3.value = value;
-                            }
-                        }
-                    }
-                    Slider {
-                        ///anchors.horizontalCenter: parent.horizontalCenter
-                        id: labeledUniformSlider2
-                        visible: isVector && !isBool
-                        implicitWidth: rootRectangle.width-10
-                        value: defaultValue
-                        maximumValue: maxValue
-                        minimumValue: minValue
-                        stepSize: step
-                        onValueChanged: {
-                            if(isVector)
-                                application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            else {
-                                if(isInt)
-                                    application.setShaderUniformValue1i(uniformName, value);
-                                else
-                                    application.setShaderUniformValue1f(uniformName, value);
-                            }
-                            if(linkedCb.checked) {
-                                labeledUniformSlider.value = value;
-                                labeledUniformSlider3.value = value;
-                            }
-
-                        }
-                    }
-                    Slider {
-                        ///anchors.horizontalCenter: parent.horizontalCenter
-                        id: labeledUniformSlider3
-                        visible: isVector && !isBool
-                        implicitWidth: rootRectangle.width-10
-                        value: defaultValue
-                        maximumValue: maxValue
-                        minimumValue: minValue
-                        stepSize: step
-                        onValueChanged: {
-                            if(isVector)
-                                application.setShaderUniformValue3f(uniformName, labeledUniformSlider.value, labeledUniformSlider2.value, labeledUniformSlider3.value);
-                            else {
-                                if(isInt)
-                                    application.setShaderUniformValue1i(uniformName, value);
-                                else
-                                    application.setShaderUniformValue1f(uniformName, value);
-                            }
-                            if(linkedCb.checked) {
-                                labeledUniformSlider.value = value;
-                                labeledUniformSlider2.value = value;
-                            }
-                        }
-                    }
-                    CheckBox {
-                        id: boolCb
-                        visible: isBool
-                        checked: defaultChecked
-                        onCheckedChanged: {
-                            if(isBool)
-                            {
-                                console.log("Set: "+uniformName+" to "+checked+" (1b)");
-                                application.setShaderUniformValue1b(uniformName, checked);
+                            id: boolCb
+                            visible: isBool
+                            checked: defaultChecked
+                            onCheckedChanged: {
+                                if(isBool)
+                                {
+                                    console.log("Set: "+uniformName+" to "+checked+" (1b)");
+                                    application.setShaderUniformValue1b(uniformName, checked);
+                                }
                             }
                         }
                     }
                 }
-            }
                 Repeater {
                     model: phongUniformsListModel
                     delegate: shaderUniformDelegate
                 }
-        }
+            }
         }
     }
 }

@@ -12,6 +12,8 @@ in Vertex {
 	vec3 normal;
 	float alpha;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
 } input;
 
 layout (location = 0) out vec4 fragColor;
@@ -38,6 +40,8 @@ uniform struct LineInfo {
 uniform bool doWireframe;
 uniform float wireframeAlpha;
 
+uniform bool useSpecularMap;
+
 uniform float alpha;
 
 uniform sampler2D diffuseTexture;
@@ -63,14 +67,29 @@ vec3 tangentFromNormalAndTexcoords(vec3 normal, vec2 deltaTex1, vec2 deltaTex2, 
 	return tangent;
 }
 */
+
+vec4 getTextureColorProjected(sampler2D samp)
+{
+	vec4 texZ = texture( samp, input.worldPosition.xy );
+	vec4 texX = texture( samp, input.worldPosition.zy );
+	vec4 texY = texture( samp, input.worldPosition.xz );
+	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
+	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
+	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
+	return texZ*mixZ+texY*mixY+texX*mixX;
+}
 	
-void phongModel(out vec3 ambientAndDiff, out vec3 spec)
+void phongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
 {
 	vec4 lightPosEye = ModelViewMatrix*vec4(light.position, 1.0f);
     vec3 lightDir = normalize( lightPosEye.xyz - input.position.xyz );
     vec3 viewDir = normalize( -input.position.xyz );
     vec3 normal = normalize( input.normal );
-    vec3 normalMap = normalize((texture2D(normalTexture, input.texCoords).xyz * 2.0) - 1.0);
+	vec3 normalFromTex;
+	normalFromTex.x = normalOffset.x*input.tangent;
+	normalFromTex.y = normalOffset.y*input.bitangent;
+	normalFromTex.z = normalOffset.z*input.worldNormal;
+	normal += normalFromTex;
     vec3 reflectDir  = reflect( -lightDir, normal );
 
     // Calculate the ambient contribution
@@ -87,9 +106,14 @@ void phongModel(out vec3 ambientAndDiff, out vec3 spec)
     spec = vec3( 0.0 );
     if ( lambertian > 0.0 )
     {
-        spec = light.intensity * material.Ks *
-               pow( max( dot( reflectDir , viewDir ), 0.0 ), exp(material.shininess) );
+		spec = light.intensity * material.Ks *
+           pow( max( dot( reflectDir , viewDir ), 0.0 ), exp(material.shininess) );
     }
+	if(useSpecularMap)
+	{
+		vec4 texSpec = getTextureColorProjected(specularTexture);
+		spec*=texSpec.x;
+	}
 }
 
 subroutine( ShaderModelType )
@@ -123,20 +147,9 @@ vec4 plainPhong()
 {
     vec3 ambientAndDiff, spec;
 	
-    phongModel( ambientAndDiff, spec );
+    phongModel( ambientAndDiff, spec, vec3(0.0) );
 	
 	return vec4(ambientAndDiff + spec, alpha);
-}
-
-vec4 getTextureColorProjected(sampler2D samp)
-{
-	vec4 texZ = texture( samp, input.worldPosition.xy );
-	vec4 texX = texture( samp, input.worldPosition.zy );
-	vec4 texY = texture( samp, input.worldPosition.xz );
-	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
-	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
-	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
-	return texZ*mixZ+texY*mixY+texX*mixX;
 }
 
 subroutine( ShaderModelType )
@@ -144,7 +157,8 @@ vec4 texturePhongSpecular()
 {
     vec3 ambientAndDiff, spec;
 	
-    phongModel( ambientAndDiff, spec );
+    vec3 normalMap = normalize((texture2D(normalTexture, input.texCoords).xyz * 2.0) - 1.0);
+    phongModel( ambientAndDiff, spec,  normalMap);
 	
 	vec4 tex = texture(diffuseTexture, input.texCoords);
 	vec4 texSpec = texture(specularTexture, input.texCoords);
@@ -156,26 +170,17 @@ subroutine( ShaderModelType )
 vec4 textureProjectedPhong()
 {
     vec3 ambientAndDiff, spec;
-    phongModel( ambientAndDiff, spec );
+	vec3 normalMap = getTextureColorProjected(normalTexture).xyz*2.0-1.0;
+    phongModel( ambientAndDiff, spec, normalMap );
 	vec4 tex = getTextureColorProjected(diffuseTexture);
-	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha);
-}
-
-subroutine( ShaderModelType )
-vec4 textureProjectedPhongSpecular()
-{
-    vec3 ambientAndDiff, spec;
-    phongModel( ambientAndDiff, spec );
-	vec4 tex = getTextureColorProjected(diffuseTexture);
-	vec4 texSpec = getTextureColorProjected(specularTexture);
-	return vec4((ambientAndDiff + spec*texSpec.x) * tex.xyz, alpha*input.alpha);
+	return vec4((ambientAndDiff) * tex.xyz + spec, alpha*input.alpha);
 }
 
 subroutine( ShaderModelType )
 vec4 furPhong()
 {
     vec3 ambientAndDiff, spec;
-    phongModel( ambientAndDiff, spec );
+    phongModel( ambientAndDiff, spec, vec3(0.0) );
 	vec4 tex = getTextureColorProjected(diffuseTexture);
 	vec4 transp = getTextureColorProjected(heightTexture);
 	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha*transp.x);

@@ -5,9 +5,9 @@
 #include <QTime>
 #include <qquickitem.h>
 
-class AbstractScene;
-
 class QOpenGLContext;
+
+class ShaderTestScene;
 
 //#define WINDOW_BASE QWindow
 #define WINDOW_BASE QQuickView
@@ -43,7 +43,7 @@ protected slots :
 
 private:
     QOpenGLContext* m_context;
-    AbstractScene* m_scene;
+    ShaderTestScene* m_scene;
     bool m_leftButtonPressed;
     QPoint m_prevPos;
     QPoint m_pos;

@@ -17,8 +17,6 @@ Material::Material()
 
 Material::~Material()
 {
-	//m_shader->is
-    //m_shader->release();
 }
 
 void Material::bind()
@@ -33,7 +31,7 @@ void Material::bind()
         config.texture()->bind();
 
         // Bind the sampler
-        config.sampler()->bind( unit );
+		m_funcs->glBindSampler(unit, config.sampler());
 
         // Associate with sampler uniform in shader (if we know the name or location)
         if ( m_samplerUniforms.contains( unit ) )
@@ -118,13 +116,13 @@ void Material::setShader( const QOpenGLShaderProgramPtr& shader )
     m_shader = shader;
 }
 
-void Material::setTextureUnitConfiguration( GLuint unit, TexturePtr texture, SamplerPtr sampler )
+void Material::setTextureUnitConfiguration( GLuint unit, TexturePtr texture, GLuint sampler )
 {
     TextureUnitConfiguration config( texture, sampler );
     m_unitConfigs.insert( unit, config );
 }
 
-void Material::setTextureUnitConfiguration( GLuint unit, TexturePtr texture, SamplerPtr sampler, const QByteArray& uniformName )
+void Material::setTextureUnitConfiguration( GLuint unit, TexturePtr texture, GLuint sampler, const QByteArray& uniformName )
 {
     setTextureUnitConfiguration( unit, texture, sampler );
     m_samplerUniforms.insert( unit, uniformName );

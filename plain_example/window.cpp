@@ -20,6 +20,10 @@ Window::Window( QWindow* window )
 
 	connect( mediator, SIGNAL( selectedShaderChanged(ShaderInfo) ), m_scene, SLOT( setActiveShader(ShaderInfo) ), Qt::DirectConnection );
 
+	connect( mediator, SIGNAL( selectedMinFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMinFilter(GLuint) ), Qt::DirectConnection );
+	connect( mediator, SIGNAL( selectedMagFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMagFilter(GLuint) ), Qt::DirectConnection );
+	connect( mediator, SIGNAL( anisotropyChanged(GLfloat) ), m_scene, SLOT( setAnisotropy(GLfloat) ), Qt::DirectConnection );
+
 	rootContext()->setContextProperty("application", mediator);
 	loadUi();
 	setTitle("ShaderTestScene");
@@ -147,27 +151,27 @@ void Window::keyPressEvent( QKeyEvent* e )
             break;
 
         case Qt::Key_D:
-            scene->setSideSpeed( speed );
+            scene->setMovementSide( speed );
             break;
 
         case Qt::Key_A:
-            scene->setSideSpeed( -speed );
+            scene->setMovementSide( -speed );
             break;
 
         case Qt::Key_W:
-            scene->setForwardSpeed( speed );
+            scene->setMovementForward( speed );
             break;
 
         case Qt::Key_S:
-            scene->setForwardSpeed( -speed );
+            scene->setMovementForward( -speed );
             break;
 
         case Qt::Key_PageUp:
-            scene->setVerticalSpeed( speed );
+            scene->setMovementVertical( speed );
             break;
 
         case Qt::Key_PageDown:
-            scene->setVerticalSpeed( -speed );
+            scene->setMovementVertical( -speed );
             break;
 			
         case Qt::Key_R:
@@ -186,21 +190,17 @@ void Window::keyReleaseEvent( QKeyEvent* e )
     {
         case Qt::Key_D:
         case Qt::Key_A:
-            scene->setSideSpeed( 0.0f );
+            scene->setMovementSide( 0.0f );
             break;
 
         case Qt::Key_W:
         case Qt::Key_S:
-            scene->setForwardSpeed( 0.0f );
+            scene->setMovementForward( 0.0f );
             break;
 
         case Qt::Key_PageUp:
         case Qt::Key_PageDown:
-            scene->setVerticalSpeed( 0.0f );
-            break;
-
-        case Qt::Key_Shift:
-            scene->setViewCenterFixed( false );
+            scene->setMovementVertical( 0.0f );
             break;
 
         default:
