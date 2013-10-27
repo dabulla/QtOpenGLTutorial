@@ -54,20 +54,6 @@ uniform mat3x3 NormalMatrix;
 uniform	mat4x4 ModelMatrix;
 uniform mat4x4 ModelViewMatrix;
 uniform mat4x4 ModelViewProjectionMatrix;
-/*
-vec3 tangentFromNormalAndTexcoords(vec3 normal, vec2 deltaTex1, vec2 deltaTex2, out vec3 tangent, out vec3 bitangent)
-{
-	float coef = 1/ (st1.x * st2.y - st2.x * st1.y);
-	vec3 tangent;
-
-	tangent.x = coef * ((v1.x * st2.y)  + (v2.x * -st1.y));
-	tangent.y = coef * ((v1.y * st2.y)  + (v2.y * -st1.y));
-	tangent.z = coef * ((v1.z * st2.y)  + (v2.z * -st1.y));
-
-	vec3 binormal = cross(normal, tangent);
-	return tangent;
-}
-*/
 
 vec4 getTextureColorProjected(sampler2D samp)
 {
@@ -83,10 +69,10 @@ vec4 getTextureColorProjected(sampler2D samp)
 vec3 toTangentSpace(vec3 v)
 {
 	vec3 result;
-	result.x = dot(v, (input.tangent));
-	result.y = dot(v, cross(input.tangent, input.normal));//(input.bitangent));
-	result.z = dot(v, (input.normal*bumpFactor));
-	return normalize(result);
+	result.x = dot(v, normalize(input.tangent));
+	result.y = dot(v, cross(normalize(input.tangent), normalize(input.normal)));//(input.bitangent));
+	result.z = dot(v, normalize(input.normal*bumpFactor));
+	return (result);
 }
 
 void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
@@ -94,7 +80,7 @@ void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
 	vec4 lightPosEye = ModelViewMatrix*vec4(light.position, 1.0f);
     vec3 lightDir = toTangentSpace( normalize(lightPosEye.xyz - input.position.xyz ));
     vec3 viewDir = toTangentSpace( normalize(-input.position.xyz ));
-    vec3 normal = vec3(0.f,0.f,1.f);//(normalOffset);
+    vec3 normal = normalOffset;
 	
     vec3 reflectDir  = reflect( -lightDir,  normal );
 

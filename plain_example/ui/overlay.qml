@@ -91,7 +91,7 @@ Rectangle {
             geometryShaderFile: "resources/shaders/showTangentSpace.geom"
             geometryShaderProc: ""
             fragmentShaderFile: "resources/shaders/phong.frag"
-            fragmentShaderProc: "plainPhong"
+            fragmentShaderProc: "showNormals"
             uniforms: "phongUniforms"
         }
     }

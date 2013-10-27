@@ -242,8 +242,8 @@ LoaderObj::LoaderObj(const char* fileName):
 		GLfloat* pUV3 = m_texCoords+i3*2;
 		deltaUV1[0] = pUV2[0]-pUV1[0];
 		deltaUV1[1] = pUV2[1]-pUV1[1];
-		deltaUV2[0] = pUV2[0]-pUV3[0];
-		deltaUV2[1] = pUV2[1]-pUV3[1];
+		deltaUV2[0] = pUV3[0]-pUV2[0];
+		deltaUV2[1] = pUV3[1]-pUV2[1];
 
 		float r = 1.0f / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]);
 		tangent[0] = (a[0] * deltaUV2[1]   - b[0] * deltaUV1[1])*r;

@@ -53,11 +53,32 @@ void main()
 {
     vec4 v0 = ModelViewProjectionMatrix * vec4(input[0].position, 1.f);
 	output.position = v0;
+	output.worldNormal = vec3(0.f,0.f,1.f);
+	output.alpha = 1.f;
+    gl_Position = output.position;
+    EmitVertex();
+	
+	vec3 normal = normalize(input[0].normal);
+    vec4 v1 = v0 + vec4(NormalMatrix * normal * normal_scale, 0);
+	output.position = v1;
+	output.worldNormal = vec3(0.f,0.f,1.f);
+	output.alpha = 1.f;
+    gl_Position = output.position;
+    EmitVertex();
+	
+    EndPrimitive();
+	
+	output.position = v0;
+	output.worldNormal = vec3(1.f,0.f,0.f);
+	output.alpha = 1.f;
     gl_Position = output.position;
     EmitVertex();
 
-    vec4 v1 = v0 + vec4(NormalMatrix*input[0].normal * normal_scale, 0);
+	vec3 tangent = normalize(input[0].tangent);
+    v1 = v0 + vec4(NormalMatrix * tangent * normal_scale, 0);
 	output.position = v1;
+	output.worldNormal = vec3(1.f,0.f,0.f);
+	output.alpha = 1.f;
     gl_Position = output.position;
     EmitVertex();
 	
@@ -65,21 +86,15 @@ void main()
 	
 	output.position = v0;
     gl_Position = output.position;
+	output.worldNormal = vec3(0.f,1.f,0.f);
+	output.alpha = 1.f;
     EmitVertex();
 
-    v1 = v0 + vec4(NormalMatrix*input[0].tangent * normal_scale, 0);
+	vec3 bitangent = normalize(cross(input[0].normal,input[0].tangent));
+    v1 = v0 + vec4(NormalMatrix * bitangent * normal_scale, 0);
 	output.position = v1;
-    gl_Position = output.position;
-    EmitVertex();
-	
-    EndPrimitive();
-	
-	output.position = v0;
-    gl_Position = output.position;
-    EmitVertex();
-
-    v1 = v0 + vec4(NormalMatrix*input[0].bitangent * normal_scale, 0);
-	output.position = v1;
+	output.worldNormal = vec3(0.f,1.f,0.f);
+	output.alpha = 1.f;
     gl_Position = output.position;
     EmitVertex();
 
