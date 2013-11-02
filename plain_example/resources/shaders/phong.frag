@@ -51,6 +51,7 @@ uniform sampler2D normalTexture;
 uniform sampler2D specularTexture;
 
 uniform mat3x3 NormalMatrix;
+uniform mat4x4 ViewMatrix;
 uniform	mat4x4 ModelMatrix;
 uniform mat4x4 ModelViewMatrix;
 uniform mat4x4 ModelViewProjectionMatrix;
@@ -69,15 +70,15 @@ vec4 getTextureColorProjected(sampler2D samp)
 vec3 toTangentSpace(vec3 v)
 {
 	vec3 result;
-	result.x = dot(v, normalize(input.tangent));
-	result.y = dot(v, cross(normalize(input.tangent), normalize(input.normal)));//(input.bitangent));
-	result.z = dot(v, normalize(input.normal*bumpFactor));
-	return (result);
+	result.x = dot(v, normalize(input.tangent)*bumpFactor);
+	result.y = dot(v, cross(normalize(input.tangent), normalize(input.normal))*bumpFactor);//(input.bitangent));
+	result.z = dot(v, normalize(input.normal));
+	return result;
 }
 
 void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
 {
-	vec4 lightPosEye = ModelViewMatrix*vec4(light.position, 1.0f);
+	vec4 lightPosEye = ViewMatrix*vec4(light.position, 1.0f);
     vec3 lightDir = toTangentSpace( normalize(lightPosEye.xyz - input.position.xyz ));
     vec3 viewDir = toTangentSpace( normalize(-input.position.xyz ));
     vec3 normal = normalOffset;
@@ -103,7 +104,7 @@ void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
 }
 void phongModel(out vec3 ambientAndDiff, out vec3 spec)
 {
-	vec4 lightPosEye = ModelViewMatrix*vec4(light.position, 1.0f);
+	vec4 lightPosEye = ViewMatrix*vec4(light.position, 1.0f);
     vec3 lightDir = normalize( lightPosEye.xyz - input.position.xyz );
     vec3 viewDir = normalize( -input.position.xyz );
     vec3 normal = normalize( input.normal );
@@ -223,6 +224,12 @@ subroutine( ShaderModelType )
 vec4 showNormals()
 {
 	return vec4(input.worldNormal*3.0f, alpha*input.alpha);
+}
+
+subroutine( ShaderModelType )
+vec4 showNormalsNormalmap()
+{
+	return vec4(toTangentSpace(texture2D(normalTexture, input.texCoords).xyz), alpha*input.alpha);
 }
 
 void main()

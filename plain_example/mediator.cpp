@@ -12,7 +12,8 @@ Mediator::Mediator(QObject *parent, ShaderTestScene *scene, Window *w)
 	m_mainWnd(w),
 	m_scene(scene),
 	m_uiWnd(0),
-	m_anisotropy(16.f)
+	m_anisotropy(16.f),
+	m_framesPerSecond(0)
 {
 	//Register the Mediator Class as a type usable in qml. This makes Q_PROPERTY work (setter, gett, propertychange...)
 	// Calling functions from qml works without this registration.

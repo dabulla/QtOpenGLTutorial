@@ -169,14 +169,14 @@ LoaderObj::LoaderObj(const char* fileName):
 		// see wikipedia for more info http://de.wikipedia.org/wiki/Kugelkoordinaten
 		for(int i=m_vertexCount-1 ; i>=0 ; i--)
 		{
-			float x = m_vertices[i*3+0]; //translate center
+			float x = m_vertices[i*3+0];
 			float y = m_vertices[i*3+1];
 			float z = m_vertices[i*3+2];
 
 			float r = sqrtf(powf(x,2.f)+powf(y,2.f)+powf(z,2.f))+0.01f;
 			float phi = atan2f(x, y);
 			float theta = acosf(z/r);
-			m_texCoords[i*2+0] = phi;
+			m_texCoords[i*2+0] = phi*0.6;
 			m_texCoords[i*2+1] = theta;
 		}
 	}

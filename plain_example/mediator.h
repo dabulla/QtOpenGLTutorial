@@ -21,12 +21,14 @@ class Mediator : public QObject
 	Q_PROPERTY(QVariant selectedMinFilter READ selectedMinFilter WRITE setSelectedMinFilter NOTIFY selectedMinFilterChanged)
 	Q_PROPERTY(QVariant selectedMagFilter READ selectedMagFilter WRITE setSelectedMagFilter NOTIFY selectedMagFilterChanged)
 	Q_PROPERTY(QVariant anisotropy READ anisotropy WRITE setAnisotropy NOTIFY anisotropyChanged)
+	Q_PROPERTY(QVariant framesPerSecond READ framesPerSecond WRITE setFramesPerSecond NOTIFY framesPerSecondChanged)
 
 signals:
 	void selectedShaderChanged(ShaderInfo shader);
 	void selectedMinFilterChanged(GLuint minFilter);
 	void selectedMagFilterChanged(GLuint magFilter);
 	void anisotropyChanged(GLfloat anisotropy);
+	void framesPerSecondChanged(GLfloat framesPerSecond);
 public:
 	Mediator(QObject *parent, ShaderTestScene *scene, Window *w);
 	~Mediator();
@@ -98,6 +100,14 @@ public:
     QVariant anisotropy() const
     { return m_anisotropy; }
 
+    void setFramesPerSecond(const QVariant &framesPerSecond)
+    {
+		m_framesPerSecond = framesPerSecond;
+		emit framesPerSecondChanged(framesPerSecond.toFloat());
+    }
+    QVariant framesPerSecond() const
+    { return m_framesPerSecond; }
+
 private:
 	Window *m_mainWnd;
 	ShaderTestScene *m_scene;
@@ -110,6 +120,7 @@ private:
 	QMap<QString, GLuint> m_texMinFilter;
 	QMap<QString, GLuint> m_texMagFilter;
 	QVariant m_anisotropy;
+	QVariant m_framesPerSecond;
 };
 
 Q_DECLARE_METATYPE(Mediator*)

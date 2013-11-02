@@ -14,17 +14,18 @@ Window::Window( QWindow* window )
     : WINDOW_BASE( window ),
       m_scene( new ShaderTestScene( this ) ),
       m_leftButtonPressed( false ),
-	  m_sourcePath(QUrl("ui/overlay.qml"))
+	  m_sourcePath(QUrl("ui/overlay.qml")),
+	  m_lastRefresh(0.f)
 {
-	Mediator* mediator = new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this);
+	m_mediator = new Mediator((QObject *)0, static_cast<ShaderTestScene*>(m_scene), this);
 
-	connect( mediator, SIGNAL( selectedShaderChanged(ShaderInfo) ), m_scene, SLOT( setActiveShader(ShaderInfo) ), Qt::DirectConnection );
+	connect( m_mediator, SIGNAL( selectedShaderChanged(ShaderInfo) ), m_scene, SLOT( setActiveShader(ShaderInfo) ), Qt::DirectConnection );
 
-	connect( mediator, SIGNAL( selectedMinFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMinFilter(GLuint) ), Qt::DirectConnection );
-	connect( mediator, SIGNAL( selectedMagFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMagFilter(GLuint) ), Qt::DirectConnection );
-	connect( mediator, SIGNAL( anisotropyChanged(GLfloat) ), m_scene, SLOT( setAnisotropy(GLfloat) ), Qt::DirectConnection );
+	connect( m_mediator, SIGNAL( selectedMinFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMinFilter(GLuint) ), Qt::DirectConnection );
+	connect( m_mediator, SIGNAL( selectedMagFilterChanged(GLuint) ), m_scene, SLOT( setSelectedMagFilter(GLuint) ), Qt::DirectConnection );
+	connect( m_mediator, SIGNAL( anisotropyChanged(GLfloat) ), m_scene, SLOT( setAnisotropy(GLfloat) ), Qt::DirectConnection );
 
-	rootContext()->setContextProperty("application", mediator);
+	rootContext()->setContextProperty("application", m_mediator);
 	loadUi();
 	setTitle("ShaderTestScene");
 	//Make the UI adopt to the Window on resize
@@ -49,7 +50,7 @@ Window::Window( QWindow* window )
     // This timer drives the scene updates
     QTimer* timer = new QTimer( this );
 	connect( timer, SIGNAL( timeout() ), this, SLOT( update() ), Qt::DirectConnection );
-    timer->start( 16 );
+    timer->start( 1 );
 
 	//Use "beforeRendering" to render a scene under the ui.
 	connect( this, SIGNAL( beforeRendering() ), this, SLOT( updateAndRenderScene() ), Qt::DirectConnection );
@@ -129,8 +130,14 @@ void Window::resizeGL()
 
 void Window::updateAndRenderScene()
 {
-    float time = m_time.elapsed() / 1000.0f;
+    float time = m_time.elapsed() / 1000.f;
     m_scene->update( time );
+	if(time-m_lastRefresh>1.f)
+	{
+		m_lastRefresh = time;
+		m_mediator->setFramesPerSecond(1.f/(time-m_lastTime));
+	}
+	m_lastTime = time;
     m_context->makeCurrent( this );
     // Do the rendering (to the back buffer)
     m_scene->render();

@@ -55,4 +55,5 @@ OTHER_FILES += \
     resources/objects/san-miguel.mtl \
     resources/objects/bunny.obj3d \
     ui/component/AccordionList.qml \
-    ui/component/ListItem.qml
+    ui/component/ListItem.qml \
+    ui/UniformControl.qml

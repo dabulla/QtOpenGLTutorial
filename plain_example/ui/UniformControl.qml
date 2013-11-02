@@ -328,14 +328,14 @@ Rectangle {
             defaultChecked: true
         }
         ListElement {
-            name: "Mr Wiggle - Freq"
-            uniformName: "wiggleFrequence"
+            name: "Mr Wiggle - Wavelen"
+            uniformName: "wiggleWavelen"
             isVector: false
             isInt: false
             isBool: false
             defaultValue: 5
             minValue: 0
-            maxValue: 1000
+            maxValue: 10
             step: 0.0001
         }
         ListElement {
@@ -566,9 +566,9 @@ Rectangle {
                     }
                 }
 
-                Component {
+                Item {
                     id: shaderUniformDelegate
-                    //property alias defValue: defaultValue
+                    property alias defValue: defaultValue
                     ColumnLayout {
                         spacing: 0
                         RowLayout {
@@ -592,7 +592,7 @@ Rectangle {
                             implicitWidth: rootRectangle.width-10
                             minimumValue: minValue
                             maximumValue: maxValue
-                            value: defaultValue
+                            value: parent.defValue
                             stepSize: step
                             onValueChanged: {
                                 if(isVector) {
@@ -675,10 +675,10 @@ Rectangle {
                 Repeater {
                     model: phongUniformsListModel
                     delegate: shaderUniformDelegate
-                    //onItemAdded: {
-                    //    item.labeledUniformSlider.value = model.get(index).defaultValue;
-                    //    console.log("Test: "+ item.name+": "+index);
-                    //}
+                    onItemAdded: {
+                        item.labeledUniformSlider.value = model.get(index).defaultValue;
+                        console.log("Test: "+ item.name+": "+index);
+                    }
                 }
             }
         }

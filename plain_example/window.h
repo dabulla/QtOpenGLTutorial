@@ -4,6 +4,7 @@
 #include <qquickview.h>
 #include <QTime>
 #include <qquickitem.h>
+#include "mediator.h"
 
 class QOpenGLContext;
 
@@ -23,6 +24,7 @@ public:
 	void loadUi();
 private:
     void initializeGL();
+	Mediator *m_mediator;
 
 protected slots:
     void resizeGL();
@@ -48,6 +50,8 @@ private:
     QPoint m_prevPos;
     QPoint m_pos;
     QTime m_time;
+    float m_lastTime;
+    float m_lastRefresh;
 };
 
 #endif // WINDOW_H

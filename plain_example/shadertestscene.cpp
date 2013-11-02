@@ -249,11 +249,15 @@ void ShaderTestScene::passUniforms()
     QMatrix3x3 worldNormalMatrix = m_modelMatrix.normalMatrix();
     QMatrix3x3 normalMatrix = modelViewMatrix.normalMatrix();
     QMatrix4x4 mvp = m_projectionMatrix * modelViewMatrix;
+    shader->setUniformValue( "ViewMatrix", m_viewMatrix );
     shader->setUniformValue( "ModelMatrix", m_modelMatrix );
     shader->setUniformValue( "ModelViewMatrix", modelViewMatrix );
     shader->setUniformValue( "ModelNormalMatrix", worldNormalMatrix );
     shader->setUniformValue( "NormalMatrix", normalMatrix );
     shader->setUniformValue( "ModelViewProjectionMatrix", mvp );
+
+    shader->setUniformValue( "time", m_time );
+	
 	
 	// Set the active Shader subroutine
 	// Subroutines are functions in the shader. They can be set almost in the same way as other uniform values
