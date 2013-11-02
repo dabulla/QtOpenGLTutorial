@@ -473,7 +473,8 @@ void ShaderTestScene::prepareTextures()
 	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_WRAP_S, GL_REPEAT );
 	m_funcs->glSamplerParameteri( m_tilingSamplerId, GL_TEXTURE_WRAP_T, GL_REPEAT );
 
-	QImage diffuseImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/diffus.png" );
+	//QImage diffuseImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/diffus.png" );
+	QImage diffuseImage( "./resources/textures/75692-diffuse.jpg" );
     m_funcs->glActiveTexture( GL_TEXTURE0 );
     TexturePtr diffuseTexture( new Texture );
     diffuseTexture->create();
@@ -482,7 +483,8 @@ void ShaderTestScene::prepareTextures()
     diffuseTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 1, diffuseTexture, m_tilingSamplerId, QByteArrayLiteral( "diffuseTexture" ) );
 
-	QImage heightImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/height.png" );
+	//QImage heightImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/height.png" );
+	QImage heightImage( "./resources/textures/75692-height.png" );
     m_funcs->glActiveTexture( GL_TEXTURE1 );
     TexturePtr heightTexture( new Texture );
     heightTexture->create();
@@ -491,7 +493,8 @@ void ShaderTestScene::prepareTextures()
     heightTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 2, heightTexture, m_tilingSamplerId, QByteArrayLiteral( "heightTexture" ) );
 
-	QImage normalImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/normal.png" );
+	//QImage normalImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/normal.png" );
+	QImage normalImage( "./resources/textures/75692-normal.jpg" );
     m_funcs->glActiveTexture( GL_TEXTURE2 );
     TexturePtr normalTexture( new Texture );
     normalTexture->create();
@@ -500,7 +503,8 @@ void ShaderTestScene::prepareTextures()
     normalTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 3, normalTexture, m_tilingSamplerId, QByteArrayLiteral( "normalTexture" ) );
 
-	QImage specularImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/specular.png" );
+	//QImage specularImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/specular.png" );
+	QImage specularImage( "./resources/textures/75692-bump.png" );
     m_funcs->glActiveTexture( GL_TEXTURE3 );
     TexturePtr specularTexture( new Texture );
     specularTexture->create();
@@ -509,7 +513,8 @@ void ShaderTestScene::prepareTextures()
     specularTexture->generateMipMaps();
     m_material->setTextureUnitConfiguration( 4, specularTexture, m_tilingSamplerId, QByteArrayLiteral( "specularTexture" ) );
 
-	QImage displaceImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/displacement.png" );
+	//QImage displaceImage( "./resources/textures/Nobiax Free Textures 13 and 14/pattern_69/displacement.png" );
+	QImage displaceImage( "./resources/textures/75692-bump.png" );
     m_funcs->glActiveTexture( GL_TEXTURE4 );
     TexturePtr displaceTexture(new Texture );
     displaceTexture->create();
