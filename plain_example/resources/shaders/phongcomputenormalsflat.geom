@@ -62,12 +62,12 @@ mat3 rotationMatrix(vec3 axis, float angle)
     float c = cos(angle);
     float oc = 1.0 - c;
     
-    return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
+    return mat3(	oc * axis.x * axis.x + c,			oc * axis.x * axis.y - axis.z * s,	oc * axis.z * axis.x + axis.y * s,
+						oc * axis.x * axis.y + axis.z * s,oc * axis.y * axis.y + c,			oc * axis.y * axis.z - axis.x * s,
+						oc * axis.z * axis.x - axis.y * s,	oc * axis.y * axis.z + axis.x * s,oc * axis.z * axis.z + c);
 }
 
-void wiggle(inout vec4 position, inout vec3 normal)
+void wiggle(inout vec4 position, inout vec3 normal, inout vec3 tangent, inout vec3 bitangent)
 {
 	float anim = (position.x+time*0.01f)*wiggleFrequence;
 	float animDerivate = wiggleFrequence;
@@ -82,6 +82,8 @@ void wiggle(inout vec4 position, inout vec3 normal)
 	position += vec4(normal*amp, 0.0f); // fourth component zero, because we add the vector to the position
 
 	normal = rotY*normal;
+	tangent = rotY*tangent;
+	bitangent = rotY*bitangent;
 }
 
 void main()
@@ -122,12 +124,20 @@ void main()
 	worldPosition[1] = vec4(input[1].position+explosionOffset[1], 1.f);
 	worldPosition[2] = vec4(input[2].position+explosionOffset[2], 1.f);
 	
+	vec3 tangent[3];
+	vec3 bitangent[3];
+	
 	if(doWiggle)
 	{
 		//use the normal to wiggle and change both, the position and the normal.
-		wiggle(worldPosition[0], normal[0]);
-		wiggle(worldPosition[1], normal[1]);
-		wiggle(worldPosition[2], normal[2]);
+		//wiggle(worldPosition[0], normal[0], tangent[0], bitangent[0]);
+		//wiggle(worldPosition[1], normal[1], tangent[1], bitangent[1]);
+		//wiggle(worldPosition[2], normal[2], tangent[2], bitangent[2]);
+		wiggle(worldPosition[0], normal[0], input[0].tangent, input[0].bitangent);
+		wiggle(worldPosition[1], normal[1], input[1].tangent, input[1].bitangent);
+		wiggle(worldPosition[2], normal[2], input[2].tangent, input[2].bitangent);
+	} else {
+	
 	}
 	
 	vec4 transformedPosition[3];

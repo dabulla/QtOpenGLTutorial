@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="LoaderObj">
+    <Position X="6.75" Y="5" Width="2" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>CAQAAAAABBAAAEAABAiQAAASgAAAAAQAAgAAAEAQAAA=</HashCode>
+      <FileName>LoaderObj.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Material">
+    <Position X="6.75" Y="0.5" Width="3.25" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAIAEACAAAAAAAEAAAACgQAAAACAAAERgAAA=</HashCode>
+      <FileName>common\material.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Mediator">
+    <Position X="4" Y="0.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>LCCABggAQgAAgABEEggOQwDECoAFCGAAAAAAAABABAQ=</HashCode>
+      <FileName>mediator.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ShaderTestScene">
+    <Position X="0.5" Y="0.5" Width="3.25" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="ShaderTestScene::CameraMode" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>shadertestscene.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="ShaderTestScene::CurrentObject" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>shadertestscene.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>EjAiRAB2ayAGgAAiBNHYkQahgCQC6AwAMRIhAAA0BEQ=</HashCode>
+      <FileName>shadertestscene.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Window" Collapsed="true">
+    <Position X="6.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABOAAAAAAAxEAQURACAGIABQAAAQAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>window.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Texture" Collapsed="true">
+    <Position X="8.5" Y="4.25" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="Texture::TextureType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>common\texture.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>EAAAIAAKAIAAgAIAAQAAAEAAAAABQBAAAAJAAABAAAg=</HashCode>
+      <FileName>common\texture.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="ShaderInfo" Collapsed="true">
+    <Position X="8.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAEAAAAAAAAABAAIAAAABACACAAAAAAABAAAIAABAAA=</HashCode>
+      <FileName>shadertestscene.h</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

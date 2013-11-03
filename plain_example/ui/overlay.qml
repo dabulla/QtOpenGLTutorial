@@ -215,7 +215,7 @@ Rectangle {
             defaultValue: 0.0
             minValue: -0.02
             maxValue: 0.02
-            step: 0.001
+            step: 0.00001
         }
         ListElement {
             name: "Scale Faces on Explode"
@@ -271,8 +271,8 @@ Rectangle {
             isVector: false
             isInt: true
             isBool: false
-            minValue: 0
-            maxValue: 18
+            minValue: 1
+            maxValue: 28
             defaultValue: 5
             step: 1
         }
@@ -325,7 +325,7 @@ Rectangle {
             uniformName: "doWiggle"
             isVector: false
             isBool: true
-            defaultChecked: true
+            defaultChecked: false
         }
         ListElement {
             name: "Mr Wiggle - Freq"
