@@ -1,6 +1,10 @@
 #version 400
 #pragma debug(on)
 
+//Red: tangent
+//Green: bitangent
+//Blue: Normal
+
 //layout (points) in;
 layout( triangles ) in;
 layout (line_strip, max_vertices = 6) out;
@@ -90,7 +94,7 @@ void main()
 	output.alpha = 1.f;
     EmitVertex();
 
-	vec3 bitangent = normalize(cross(input[0].normal,input[0].tangent));
+	vec3 bitangent = normalize(input[0].bitangent); //normalize(cross(input[0].normal,input[0].tangent));
     v1 = v0 + vec4(NormalMatrix * bitangent * normal_scale, 0);
 	output.position = v1;
 	output.worldNormal = vec3(0.f,1.f,0.f);

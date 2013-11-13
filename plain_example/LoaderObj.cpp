@@ -177,7 +177,7 @@ LoaderObj::LoaderObj(const char* fileName):
 			float phi = atan2f(x, y);
 			float theta = acosf(z/r);
 			m_texCoords[i*2+0] = phi*0.6;
-			m_texCoords[i*2+1] = theta;
+			m_texCoords[i*2+1] = -theta;
 		}
 	}
 
@@ -249,9 +249,9 @@ LoaderObj::LoaderObj(const char* fileName):
 		tangent[0] = (a[0] * deltaUV2[1]   - b[0] * deltaUV1[1])*r;
 		tangent[1] = (a[1] * deltaUV2[1]   - b[1] * deltaUV1[1])*r;
 		tangent[2] = (a[2] * deltaUV2[1]   - b[2] * deltaUV1[1])*r;
-		bitangent[0] = (b[0] * deltaUV1[0]   - a[0] * deltaUV2[0])*r;
-		bitangent[1] = (b[1] * deltaUV1[0]   - a[1] * deltaUV2[0])*r;
-		bitangent[2] = (b[2] * deltaUV1[0]   - a[2] * deltaUV2[0])*r;
+		bitangent[0] = (a[0] * deltaUV2[0]   - b[0] * deltaUV1[0])*r;
+		bitangent[1] = (a[1] * deltaUV2[0]   - b[1] * deltaUV1[0])*r;
+		bitangent[2] = (a[2] * deltaUV2[0]   - b[2] * deltaUV1[0])*r;
 		
 		m_tangents[i1*3] += tangent[0];
 		m_tangents[i1*3+1] += tangent[1];
@@ -263,15 +263,15 @@ LoaderObj::LoaderObj(const char* fileName):
 		m_tangents[i3*3+1] += tangent[1];
 		m_tangents[i3*3+2] += tangent[2];
 		
-		m_bitangents[i1*3] += tangent[0];
-		m_bitangents[i1*3+1] += tangent[1];
-		m_bitangents[i1*3+2] += tangent[2];
-		m_bitangents[i2*3] += tangent[0];
-		m_bitangents[i2*3+1] += tangent[1];
-		m_bitangents[i2*3+2] += tangent[2];
-		m_bitangents[i3*3] += tangent[0];
-		m_bitangents[i3*3+1] += tangent[1];
-		m_bitangents[i3*3+2] += tangent[2];
+		m_bitangents[i1*3] += bitangent[0];
+		m_bitangents[i1*3+1] += bitangent[1];
+		m_bitangents[i1*3+2] += bitangent[2];
+		m_bitangents[i2*3] += bitangent[0];
+		m_bitangents[i2*3+1] += bitangent[1];
+		m_bitangents[i2*3+2] += bitangent[2];
+		m_bitangents[i3*3] += bitangent[0];
+		m_bitangents[i3*3+1] += bitangent[1];
+		m_bitangents[i3*3+2] += bitangent[2];
 
 		adjacentFaces[i1]++;
 		adjacentFaces[i2]++;

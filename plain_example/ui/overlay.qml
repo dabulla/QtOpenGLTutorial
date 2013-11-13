@@ -149,13 +149,6 @@ Rectangle {
             step: 0.001
         }
         ListElement {
-            name: "Use Specular Map"
-            uniformName: "useSpecularMap"
-            isVector: false
-            isBool: true
-            defaultChecked: true
-        }
-        ListElement {
             name: "Material Ks"
             uniformName: "material.Ks"
             isVector: true
@@ -165,6 +158,24 @@ Rectangle {
             minValue: 0
             maxValue: 10
             stee: 0.001
+        }
+        ListElement {
+            name: "Use Specular Map"
+            uniformName: "useSpecularMap"
+            isVector: false
+            isBool: true
+            defaultChecked: true
+        }
+        ListElement {
+            name: "Specular Map Factor"
+            uniformName: "specularTextureFactor"
+            isVector: false
+            isInt: false
+            isBool: false
+            defaultValue: 1.0
+            minValue: -1
+            maxValue: 1
+            step: 0.000001
         }
         ListElement {
             name: "Light Position"
@@ -187,6 +198,17 @@ Rectangle {
             minValue: 0
             maxValue: 10
             step: 0.01
+        }
+        ListElement {
+            name: "Texture Scale"
+            uniformName: "texFactor"
+            isVector: false
+            isInt: false
+            isBool: false
+            defaultValue: 1.0
+            minValue: 0.01
+            maxValue: 20
+            step: 0.000001
         }
         ListElement {
             name: "Smooth Shading"
@@ -266,7 +288,7 @@ Rectangle {
             step: 0.001
         }
         ListElement {
-            name: "Fur Levels"
+            name: "Fur Levels/Render Passes"
             uniformName: "renderPasses"
             isVector: false
             isInt: true
@@ -468,7 +490,7 @@ Rectangle {
                     id: cullModeGroupBox
                     ///anchors.left: parent.left
                     ///anchors.right: parent.right
-                    title: "Camera Mode"
+                    title: "Cull Mode"
                     ExclusiveGroup { id: cullMode }
                     ColumnLayout {
                         RadioButton {

@@ -40,7 +40,10 @@ uniform struct LineInfo {
 uniform bool doWireframe;
 uniform float wireframeAlpha;
 
+uniform float texFactor;
+
 uniform bool useSpecularMap;
+uniform float specularTextureFactor;
 
 uniform float alpha;
 uniform float bumpFactor;
@@ -58,22 +61,54 @@ uniform mat4x4 ModelViewProjectionMatrix;
 
 vec4 getTextureColorProjected(sampler2D samp)
 {
-	vec4 texZ = texture( samp, input.worldPosition.xy );
-	vec4 texX = texture( samp, input.worldPosition.zy );
-	vec4 texY = texture( samp, input.worldPosition.xz );
+	vec4 texZ = texture( samp, input.worldPosition.xy*texFactor );
+	vec4 texX = texture( samp, input.worldPosition.zy*texFactor );
+	vec4 texY = texture( samp, input.worldPosition.xz*texFactor );
 	float mixZ = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,0.0f,1.0f))));
 	float mixX = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(1.0f,0.0f,0.0f))));
 	float mixY = smoothstep( 0.02, 0.12, abs(dot(input.worldNormal, vec3(0.0f,1.0f,0.0f))));
 	return texZ*mixZ+texY*mixY+texX*mixX;
 }
 
+float getSpecular()
+{
+	float spec = 1.f;
+	if(useSpecularMap)
+	{
+		vec4 texSpec = texture(specularTexture, input.texCoords);
+		if(specularTextureFactor<0)
+		{
+			spec*=1-texSpec.x*-specularTextureFactor;
+		} else {
+			spec*=1-(1-texSpec.x)*specularTextureFactor;
+		}
+	}
+	return spec;
+}
+
+float getSpecularProjected()
+{
+	float spec = 1.f;
+	if(useSpecularMap)
+	{
+		vec4 texSpec = getTextureColorProjected(specularTexture);
+		if(specularTextureFactor>0)
+		{
+			spec*=1-texSpec.x*specularTextureFactor;
+		} else {
+			spec*=1-(1-texSpec.x)*-specularTextureFactor;
+		}
+	}
+	return spec;
+}
+
 vec3 toTangentSpace(vec3 v)
 {
 	vec3 result;
 	result.x = dot(v, normalize(input.tangent)*bumpFactor);
-	result.y = dot(v, cross(normalize(input.tangent), normalize(input.normal))*bumpFactor);//(input.bitangent));
+	result.y = dot(v, normalize(input.bitangent)*bumpFactor);
 	result.z = dot(v, normalize(input.normal));
-	return result;
+	return normalize(result);
 }
 
 void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
@@ -96,7 +131,7 @@ void bumpyPhongModel(out vec3 ambientAndDiff, out vec3 spec, vec3 normalOffset)
     ambientAndDiff = ambient + diffuse;
     // Calculate the specular highlight component
     spec = vec3( 0.0 );
-    if ( lambertian > 0.0 )
+    //if ( lambertian > 0.0 )
     {
 		spec = light.intensity * material.Ks *
            pow( max( dot( reflectDir , viewDir ), 0.0 ), exp(material.shininess) );
@@ -172,11 +207,7 @@ vec4 texturePhong()
 	phongModel( ambientAndDiff, spec);
 	
 	vec4 tex = texture(diffuseTexture, input.texCoords);
-	if(useSpecularMap)
-	{
-		vec4 texSpec = texture(specularTexture, input.texCoords);
-		spec*=texSpec.x;
-	}
+	spec *= getSpecular();
 	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha);
 }
 
@@ -188,11 +219,7 @@ vec4 bumpyPhong()
     bumpyPhongModel( ambientAndDiff, spec,  normalMap);
 	
 	vec4 tex = texture(diffuseTexture, input.texCoords);
-	if(useSpecularMap)
-	{
-		vec4 texSpec = texture(specularTexture, input.texCoords);
-		spec*=texSpec.x;
-	}
+	spec *= getSpecular();
 	return vec4((ambientAndDiff + spec) * tex.xyz, alpha*input.alpha);
 }
 
@@ -202,11 +229,7 @@ vec4 textureProjectedPhong()
     vec3 ambientAndDiff, spec;
     phongModel( ambientAndDiff, spec);
 	vec4 tex = getTextureColorProjected(diffuseTexture);
-	if(useSpecularMap)
-	{
-		vec4 texSpec = getTextureColorProjected(specularTexture);
-		spec*=texSpec.x;
-	}
+	spec *= getSpecularProjected();
 	return vec4((ambientAndDiff) * tex.xyz + spec, alpha*input.alpha);
 }
 
