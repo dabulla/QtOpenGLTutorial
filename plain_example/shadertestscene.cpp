@@ -52,8 +52,12 @@ ShaderTestScene::ShaderTestScene( QObject* parent )
 	  m_upVector(0.0f, 1.0f, 0.0f ),
 	  m_cameraToCenter(m_viewCenter-m_position),
 	  m_tilingSamplerId(0),
-	  m_planeResolutionX(8),
-	  m_planeResolutionZ(8),
+	  m_planeResolutionX(64),
+	  m_planeResolutionZ(64),
+	  m_planeWidth(4.f),
+	  m_planeDepth(4.f),
+	  m_planeTexRepeatX(5),
+	  m_planeTexRepeatZ(5),
 	  m_planeVertexCount(m_planeResolutionX*m_planeResolutionZ),
 	  m_planeElementCount((m_planeResolutionX-1)*(m_planeResolutionZ-1)*2*3) // For each Vertex there will be two triangles, except the last row and column of the plane.
 {
@@ -74,10 +78,10 @@ void ShaderTestScene::onMessageLogged( QOpenGLDebugMessage message )
 void ShaderTestScene::initialise()
 {
 #ifdef DEBUG_OPENGL_ENABLED
-	connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
-				this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
-				Qt::DirectConnection );
 	if ( m_logger.initialize() ) {
+		connect( &m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
+					this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
+					Qt::DirectConnection );
 		m_logger.startLogging( QOpenGLDebugLogger::SynchronousLogging );
 		m_logger.enableMessages();
 		QVector<uint> disabledMessages;
@@ -615,10 +619,6 @@ void ShaderTestScene::prepareVertexBuffers()
  //   m_indexBuffer.release();
 
 
-	const float planeSizeX = 1.f;
-	const float planeSizeZ = 1.f;
-	const float planeTexRepeatX = 1.f;
-	const float planeTexRepeatZ = 1.f;
 
 	float *planeVertexPositions = new float[m_planeVertexCount*3];
 	float *planeVertexNormals = new float[m_planeVertexCount*3];
@@ -627,13 +627,13 @@ void ShaderTestScene::prepareVertexBuffers()
 	float *planeVertexTexCoords = new float[m_planeVertexCount*2];
 	int *planeIndices = new int[m_planeElementCount]; 
 	
-	const float texFactorX = 1.f/(float)m_planeResolutionX*planeTexRepeatX;
-	const float texFactorZ = 1.f/(float)m_planeResolutionZ*planeTexRepeatZ;
-	const float posFactorX = 1.f/(float)m_planeResolutionX*planeSizeX;
-	const float posFactorZ = 1.f/(float)m_planeResolutionZ*planeSizeZ;
+	const float texFactorX = 1.f/(float)m_planeResolutionX*m_planeTexRepeatX;
+	const float texFactorZ = 1.f/(float)m_planeResolutionZ*m_planeTexRepeatZ;
+	const float posFactorX = 1.f/(float)m_planeResolutionX*m_planeWidth;
+	const float posFactorZ = 1.f/(float)m_planeResolutionZ*m_planeDepth;
 	for(unsigned int ix=0 ; ix<m_planeResolutionX ; ++ix)
 	{
-		float posX = ((float)ix)*posFactorX-(planeSizeX*0.5);
+		float posX = ((float)ix)*posFactorX-(m_planeWidth*0.5);
 		float texX = ((float)ix)*texFactorX;
 		for(unsigned int iz=0 ; iz<m_planeResolutionZ ; ++iz)
 		{
@@ -652,13 +652,13 @@ void ShaderTestScene::prepareVertexBuffers()
 			}
 			planeVertexPositions[idxx3] = posX;
 			planeVertexPositions[idxx3+1] = 0.f;
-			planeVertexPositions[idxx3+2] = ((float)iz)*posFactorZ-(planeSizeZ*0.5);
+			planeVertexPositions[idxx3+2] = ((float)iz)*posFactorZ-(m_planeDepth*0.5);
 
 			planeVertexNormals[idxx3] =   0.f;
 			planeVertexNormals[idxx3+1] = 1.f;
 			planeVertexNormals[idxx3+2] = 0.f;
 
-			planeVertexTangents[idxx3] =   1.f;
+			planeVertexTangents[idxx3] =   -1.f;
 			planeVertexTangents[idxx3+1] = 0.f;
 			planeVertexTangents[idxx3+2] = 0.f;
 

@@ -10,6 +10,8 @@ in vec3 in_Bitangent;
 subroutine vec4 ShaderModelType();
 subroutine uniform ShaderModelType shaderModel;
 
+uniform float texFactor;
+
 out Vertex {
     noperspective vec3 edgeDistance;
     vec4 worldPosition;
@@ -35,7 +37,7 @@ vec4 plain() {
 	output.worldNormal = ModelNormalMatrix*in_Normal;
 	output.position = ModelViewMatrix*pos;
 	output.normal = NormalMatrix*in_Normal;
-    output.texCoords = in_TexCoords;
+    output.texCoords = in_TexCoords*texFactor;
     output.tangent = NormalMatrix*in_Tangent;
     output.bitangent = NormalMatrix*in_Bitangent;
 

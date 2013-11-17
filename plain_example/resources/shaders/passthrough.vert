@@ -8,6 +8,8 @@ layout(location=2) in vec2 in_TexCoords;
 layout(location=3) in vec3 in_Tangent;
 layout(location=4) in vec3 in_Bitangent;
 
+uniform float texFactor;
+
 out rawVertex {
     vec3 position;
     vec3 normal;
@@ -20,7 +22,7 @@ void main()
 {
     output.position = in_Position;
     output.normal = in_Normal;
-    output.texCoords = in_TexCoords;//in_Position.xy;//
+    output.texCoords = in_TexCoords*texFactor;//in_Position.xy;//
     output.tangent = in_Tangent;//in_Position.xy;//
     output.bitangent = in_Bitangent;//in_Position.xy;//
 }

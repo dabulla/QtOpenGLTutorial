@@ -28,6 +28,8 @@ const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
 //in case there is no normal map, an algorithm like this could be used
+//Note: This is not complete. To rotate the normal around the correct axis, tangentspace must be used.
+//This works, because tangentspace is spanned using texture coordinates.  Alternatively, it may be possible to use derivates of input[i].texCoords here.
 vec3 normalFromHeightMap(sampler2D tex, vec2 tex_coord)
 {
     float s11 = texture(tex, tex_coord).x;

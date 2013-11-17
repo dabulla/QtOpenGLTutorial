@@ -169,6 +169,10 @@ private:
 	// All members used for plane object
 	const unsigned int m_planeResolutionX;
 	const unsigned int m_planeResolutionZ;
+	const float m_planeWidth;
+	const float m_planeDepth;
+	const float m_planeTexRepeatX;
+	const float m_planeTexRepeatZ;
 
     QOpenGLVertexArrayObject m_vaoPlane;
 
