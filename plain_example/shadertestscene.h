@@ -1,7 +1,7 @@
 #ifndef SHADERTESTSCENE_H
 #define SHADERTESTSCENE_H
 
-#include <vld.h>
+//#include <vld.h>
 #include "abstractscene.h"
 #include "material.h"
 

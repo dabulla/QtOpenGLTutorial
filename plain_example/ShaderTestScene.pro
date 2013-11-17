@@ -9,13 +9,13 @@ QT += core multimedia network xml script xmlpatterns declarative opengl widgets 
 CONFIG += qtestlib debug
 DEFINES += _WINDOWS QT_OPENGL_LIB QT_WIDGETS_LIB QT_MULTIMEDIA_LIB QT_NETWORK_LIB QT_QML_LIB QT_QUICK_LIB QT_DECLARATIVE_LIB QT_SCRIPT_LIB QT_XML_LIB QT_XMLPATTERNS_LIB QT_CONCURRENT_LIB QT_MULTIMEDIAWIDGETS_LIB QT_TESTLIB_LIB
 INCLUDEPATH += ./common \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/include \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/include/QtOpenGL \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/include/QtWidgets \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/include/QtGui \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/include/QtCore \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/include \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/include/QtOpenGL \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/include/QtWidgets \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/include/QtGui \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/include/QtCore \
     ./debug \
-    ./../../../../Qt/Qt5.1.0/5.1.0/msvc2012_64_opengl/mkspecs/win32-msvc2012 \
+    ./../../../../Qt/Qt5.1.1/5.1.1/msvc2012_64_opengl/mkspecs/win32-msvc2012 \
     .
 LIBS += -lglu32 \
     -lopengl32 \
