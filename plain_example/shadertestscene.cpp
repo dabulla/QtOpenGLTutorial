@@ -608,17 +608,6 @@ void ShaderTestScene::prepareVertexBuffers()
 
 		m_indexBuffer.bind();
     }
-	//TODO: think over these release()s
-	//After using the vao, resources must be released
- //   m_material->shader()->release();
- //   m_positionBuffer.release();
- //   m_normalsBuffer.release();
-	//m_tangentsBuffer.release();
-	//m_bitangentsBuffer.release();
- //   m_texCoordsBuffer.release();
- //   m_indexBuffer.release();
-
-
 
 	float *planeVertexPositions = new float[m_planeVertexCount*3];
 	float *planeVertexNormals = new float[m_planeVertexCount*3];
