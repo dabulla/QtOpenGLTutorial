@@ -1,6 +1,6 @@
 #include "LoaderObjFast.h"
 #include <qtextstream.h>
-#include <qregularexpression.h>
+//#include <qregularexpression.h>
 #include <qdebug.h>
 #include "obj-0.1\obj.hpp"
 #include "obj-0.1\obj\obj_parser.hpp"
